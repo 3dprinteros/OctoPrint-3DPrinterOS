@@ -202,6 +202,8 @@ class Cloud3DPrinterOSPlugin(octoprint.plugin.StartupPlugin,
             self.pi.printer.octo_cancel()
         elif event == Events.PRINT_FAILED:
             self.pi.printer.octo_failed()
+        elif event == Events.PRINT_DONE:
+            self.pi.printer.octo_done()
 
     def get_printer(self):
         return self._printer
