@@ -59,7 +59,7 @@ class Cloud3DPrinterOSPlugin(octoprint.plugin.StartupPlugin,
     def get_settings_defaults(self):
         return dict(
             url="acorn.3dprinteros.com",
-            printer_type="RR1P",
+            printer_type="ROBO3D_R1PLUS",
             verbose=False,
             registered=False,
             serial=True,
