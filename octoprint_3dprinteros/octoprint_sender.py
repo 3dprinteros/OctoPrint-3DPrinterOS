@@ -166,3 +166,6 @@ class Sender(BaseSender):
             self.cloud_printing_flag = False
             if self.percent > 0:
                 self.percent = 100
+
+    def octo_error(self, msg):
+        self.parent.register_error(611, "OctoPrint error: %s" % msg)

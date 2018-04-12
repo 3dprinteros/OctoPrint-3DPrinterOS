@@ -47,6 +47,7 @@ class PrinterInterface(threading.Thread):
         self.timeout = self.DEFAULT_OPERATIONAL_TIMEOUT
         self.first_request = True
         self.printer = self.connect_to_printer()
+        self.http_client = None
         # self.current_camera = self.parent.camera_controller.get_current_camera_name()
         # self.logger.info('New printer interface for %s' % str(usb_info))
         super(PrinterInterface, self).__init__(name="PrinterInterface")
@@ -109,25 +110,37 @@ class PrinterInterface(threading.Thread):
 
     # @log.log_exception
     def run(self):
-        self.http_client = http_client.HTTPClient(self, keep_connection_flag=True)
         self.last_operational_time = time.time()
         acknowledge = None
+        can_restart = True
+        stop_before_new_loop = False
         while not self.parent.stop_flag and (not self.stop_flag or self.errors):
+            if self != self.parent.pi or self.printer_token != self.parent.token:
+                can_restart = False
+                if self.errors:
+                    stop_before_new_loop = True
+                else:
+                    break
+            if not self.http_client:
+                self.http_client = http_client.HTTPClient(self, keep_connection_flag=True)
             self.check_operational_status()
             message, kw_message = self.form_command_request(acknowledge)
             answer = self.http_client.pack_and_send('command', *message, **kw_message)
             if answer is not None:
                 self.logger.debug("Answer: " + str(answer))
                 acknowledge = self.execute_server_command(answer)
+            if stop_before_new_loop:
+                break
             if not self.stop_flag and not self.parent.stop_flag:
                 if self.stop_in_next_loop_flag:
                     self.stop_flag = True
                 else:
                     time.sleep(self.COMMAND_REQUEST_PERIOD)
-        self.http_client.close()
+        if self.http_client:
+            self.http_client.close()
         self.close_printer_sender()
         self.logger.info('Printer interface was stopped')
-        if not self.parent.stop_flag:
+        if can_restart and not self.parent.stop_flag:
             self.logger.info('Trying to restart Printer interface')
             self.parent.restart_printer_interface()
 
@@ -211,10 +224,10 @@ class PrinterInterface(threading.Thread):
 
     def state_report(self):
         report = {"state": self.get_printer_state()}
-        self.logger.info('get_current_data %s' % str(self.get_octo_printer().get_current_data()))
-        self.logger.info('get_current_job %s' % str(self.get_octo_printer().get_current_job()))
-        self.logger.info('get_current_temperatures %s' % str(self.get_octo_printer().get_current_temperatures()))
-        self.logger.info('get_state_id %s' % str(self.get_octo_printer().get_state_id()))
+        self.logger.debug('get_current_data %s' % str(self.get_octo_printer().get_current_data()))
+        self.logger.debug('get_current_job %s' % str(self.get_octo_printer().get_current_job()))
+        self.logger.debug('get_current_temperatures %s' % str(self.get_octo_printer().get_current_temperatures()))
+        self.logger.debug('get_state_id %s' % str(self.get_octo_printer().get_state_id()))
         if self.printer:
             try:
                 if self.is_downloading():
