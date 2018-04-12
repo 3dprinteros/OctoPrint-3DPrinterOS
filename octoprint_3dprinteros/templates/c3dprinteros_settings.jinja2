@@ -1,0 +1,64 @@
+<form id="settings_plugin_3dprinteros" class="form-horizontal">
+    <a class="row" data-bind="attr: { href: settings.service_ui }" target="_blank">
+        <div id="c3dprinteros-logo" data-toggle="tooltip" title="{{ _('The 3DPrinterOS logo is a trademark of 3D Control Systems Ltd.') }}">
+        <div class="span6">
+            <img src="https://acorn.3dprinteros.com/assets/i/header/3dprinteros_logo.svg">
+        </div></div>
+    </a>
+    <div class="control-group">
+        <label class="control-label">{{ _('Machine type:') }}</label>
+        <div class="controls">
+            <select data-bind="value: settings.printer_type, options: printerTypes,
+             optionsText: 'name', optionsValue: 'type', enable: !printerRegistered()"></select>
+        </div>
+    </div>
+    <div class="control-group">
+        <div class="controls">
+            <button class="btn" data-bind="click: showRegistration, visible: !printerRegistered()">{{ _('Register Printer') }}</button>
+            <button class="btn" data-bind="click: unregister, visible: printerRegistered">{{ _('Unregister Printer') }}</button>
+        </div>
+    </div>
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: settings.verbose">{{ _('Verbose (debugging) logging') }}
+            </label>
+        </div>
+    </div>
+    <div id="plugin_c3dprinteros_registration" class="modal hide fade">
+        <div class="modal-header">
+            <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+            <h3>{{ _('Register printer with 3DPrinterOS Cloud') }}</h3>
+        </div>
+        <div class="modal-body row-fluid">
+            <div class="row-fluid">
+                <div class="alert alert-error span11" data-bind="visible: registrationFailed">
+                    {{ _('Failed to register printer with 3DPrinterOS Cloud.') }}
+                    <span data-bind="html: registrationFailedReason"></span>
+                </div>
+            </div>
+            <div class="row-fluid" data-bind="visible: registering">
+                <div class="span9">
+                    {{ _('Registration token:') }}
+                    <span data-bind="text: registrationCode"></span>
+                </div>
+            </div>
+            <div class="row-fluid" data-bind="visible: registering">
+                <div class="span11">
+                    <strong>{{ _('How to use token: ') }}</strong>
+                    Go to <a data-bind="attr: {href: registrationLink}" target="_blank">3DPrinterOS Cloud Printers page</a> (You need to register on 3DPrinterOS Cloud before, if you don't have an account).
+                    Then click 'Register Dremel 3D40/45' button, enter Registration token in popup window and press Ok.
+                </div>
+            </div>
+            <div class="row-fluid text-center" data-bind="visible: !registering()">
+                <div class="span11">
+                    <h3>Printer was successfully registered to <strong data-bind="text: registeredEmail"></strong></h3>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" data-dismiss="modal" data-bind="visible: !printerRegistered()">{{ _('Cancel') }}</button>
+            <button class="btn" data-dismiss="modal" data-bind="visible: printerRegistered">{{ _('OK') }}</button>
+        </div>
+    </div>
+</form>

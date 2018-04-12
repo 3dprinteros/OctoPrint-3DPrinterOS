@@ -1,0 +1,4 @@
+include README.md
+recursive-include octoprint_3dprinteros/templates *
+recursive-include octoprint_3dprinteros/translations *
+recursive-include octoprint_3dprinteros/static *
