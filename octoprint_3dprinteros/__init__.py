@@ -45,9 +45,10 @@ class Cloud3DPrinterOSPlugin(octoprint.plugin.StartupPlugin,
         self.url = None
         self.last_http_client_error = None
         self.printer_types = {
-            'RR1P': {'name': 'Robo R1+', 'VID': 'OCTO', 'PID': 'RR1P'},
-            'RR2': {'name': 'Robo R2', 'VID': 'OCTO', 'PID': '0RR2'},
-            'RC2': {'name': 'Robo C2', 'VID': 'OCTO', 'PID': '0RC2'}
+            'ROBO3D': {'name': 'Robo3D R1', 'VID': '03EB', 'PID': '204B'},
+            'ROBO3D_R1PLUS': {'name': 'Robo3D R1+', 'VID': '2341', 'PID': '0010'},
+            'RR2': {'name': 'Robo3D R2', 'VID': 'OCTO', 'PID': '0RR2'},
+            'RC2': {'name': 'Robo3D C2', 'VID': 'OCTO', 'PID': '0RC2'}
         }
         self.printer_types_js = []
         for key in self.printer_types:
