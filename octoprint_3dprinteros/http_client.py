@@ -33,9 +33,11 @@ class HTTPClient:
     token_send_logs_path = streamer_prefix + "/sendLogs"
     camera_path = streamer_prefix + "/camera" #json['image': base64_image ]
 
-    def __init__(self, parent, keep_connection_flag = False, debug = False, max_send_retry_count = None):
+    def __init__(self, parent, keep_connection_flag = False, debug = True, max_send_retry_count = None):
         if hasattr(parent, "parent"):
             self.app = parent.parent
+            if hasattr(self.app, "parent"):
+                self.app = self.app.parent
         else:
             self.app = parent
         self.url = self.app.url
@@ -48,6 +50,7 @@ class HTTPClient:
         self.local_ip = getattr(self.app, "local_ip", None)
         self.connection = self.connect()
         self.max_send_retry_count = max_send_retry_count
+        self.debug = debug
 
     def get_mac_add_or_serial_number(self):
         id = self.get_serial_number()
@@ -157,9 +160,11 @@ class HTTPClient:
             if self.keep_connection_flag:
                 headers["Connection"] = "keep-alive"
         try:
-            self.logger.debug("%s, %s %s %s" % (method, path, payload, headers))
+            if self.debug:
+                self.logger.debug("%s, %s %s %s" % (method, path, payload, headers))
+            else:
+                self.logger.debug("%s, %s %s" % (method, path, headers))
             connection.request(method, path, payload, headers)
-            self.logger.debug("test2")
             resp = connection.getresponse()
         except Exception as e:
             self.logger.info("Error during HTTP request:" + str(e))
@@ -205,13 +210,13 @@ class HTTPClient:
         if target == 'user_login':
             data = { 'login': {'user': args[0], 'password': args[1]},
                      'platform': platforms.PLATFORM, 'host_mac': self.mac,
-                     'local_ip': self.local_ip, 'version': self.app.VERSION}
+                     'local_ip': self.local_ip, 'version': self.app.get_plugin_version()}
             if 'disposable_token' in kwargs:
                 data['login']['disposable_token'] = kwargs['disposable_token']
             path = self.user_login_path
             #self.logger.debug(data)
         elif target == 'printer_login':
-            data = { 'user_token': args[0], 'printer': args[1], "version": self.app.VERSION,
+            data = { 'user_token': args[0], 'printer': args[1], "version": self.app.get_plugin_version(),
                      "data_time": time.ctime(), "camera": None }
                     # "data_time": time.ctime(), "camera": config.get_app().camera_controller.get_current_camera_name()}
             path = self.printer_login_path
@@ -221,8 +226,7 @@ class HTTPClient:
                 data.pop('command_ack')
             path = self.command_path
         elif target == 'camera':
-            data = { 'user_token': args[0], 'camera_number': args[1], 'camera_name': args[2],
-                     'file_data': args[3], 'host_mac': self.mac}
+            data = { 'auth_token': args[0], 'camera_number': args[1], 'image': args[2]}
             path = self.camera_path
         else:
             self.parent.register_error(4, 'No such target for packaging: ' + target)

@@ -18,6 +18,7 @@ import threading
 import downloader
 import http_client
 import octoprint_sender
+from octo_cam import OctoCamera
 
 class PrinterInterface(threading.Thread):
 
@@ -48,7 +49,9 @@ class PrinterInterface(threading.Thread):
         self.first_request = True
         self.printer = self.connect_to_printer()
         self.http_client = None
-        # self.current_camera = self.parent.camera_controller.get_current_camera_name()
+        self.camera = None
+        self.camera_thread = None
+        self.current_camera_enabled = None
         # self.logger.info('New printer interface for %s' % str(usb_info))
         super(PrinterInterface, self).__init__(name="PrinterInterface")
 
@@ -117,12 +120,17 @@ class PrinterInterface(threading.Thread):
         while not self.parent.stop_flag and (not self.stop_flag or self.errors):
             if self != self.parent.pi or self.printer_token != self.parent.token:
                 can_restart = False
+                self.stop_flag = True
                 if self.errors:
                     stop_before_new_loop = True
                 else:
                     break
             if not self.http_client:
                 self.http_client = http_client.HTTPClient(self, keep_connection_flag=True)
+            if self.parent.camera_enabled:
+                self.start_camera()
+            else:
+                self.stop_camera()
             self.check_operational_status()
             message, kw_message = self.form_command_request(acknowledge)
             answer = self.http_client.pack_and_send('command', *message, **kw_message)
@@ -143,6 +151,21 @@ class PrinterInterface(threading.Thread):
         if can_restart and not self.parent.stop_flag:
             self.logger.info('Trying to restart Printer interface')
             self.parent.restart_printer_interface()
+
+    def start_camera(self):
+        if not self.camera:
+            self.camera = OctoCamera(self)
+        if self.camera_thread:
+            if self.camera_thread.isAlive():
+                return
+            del self.camera_thread
+        self.camera.stop_flag = False
+        self.camera_thread = threading.Thread(target=self.camera.main_loop)
+        self.camera_thread.start()
+
+    def stop_camera(self):
+        if self.camera_thread and self.camera_thread.isAlive():
+            self.camera.stop_flag = True
 
     def validate_command(self, server_message):
         command = server_message.get('command')
@@ -258,14 +281,13 @@ class PrinterInterface(threading.Thread):
         self.logger.warning("Error N%d. %s" % (code, message))
 
     def check_camera_name(self):
-        camera_name = "Disabled"
-        # camera_name = self.parent.camera_controller.get_current_camera_name()
-        # if self.current_camera != camera_name:
-        #     self.logger.info("Camera change detected")
-        #     with self.requests_lock:
-        #         self.requests_to_server['camera_change'] = camera_name
-        #     self.current_camera = camera_name
-        #
+        if self.current_camera_enabled != self.parent.camera_enabled:
+            self.logger.info("Camera change detected")
+            camera_name = "Dual camera" if self.parent.camera_enabled else "Disable camera"
+            with self.requests_lock:
+                self.requests_to_server['camera_change'] = camera_name
+            self.current_camera_enabled = self.parent.camera_enabled
+
     def set_printer_name(self, name):
         self.printer_name = name
 
@@ -274,10 +296,9 @@ class PrinterInterface(threading.Thread):
     #     if log.report_problem('logs'):
     #         return False
 
-    # def switch_camera(self, module):
-    #     self.logger.info('Changing camera module to %s due to server request' % module)
-    #     self.parent.camera_controller.switch_camera(module, self.printer_token)
-    #     return True
+    def switch_camera(self, module):
+        self.parent.set_camera(module != 'Disable camera')
+        return True
     #
     # def restart_camera(self):
     #     self.logger.info('Executing camera restart command from server')

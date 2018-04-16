@@ -17,8 +17,6 @@ class Cloud3DPrinterOSPlugin(octoprint.plugin.StartupPlugin,
                              octoprint.plugin.AssetPlugin,
                              octoprint.plugin.SimpleApiPlugin,
                              octoprint.plugin.EventHandlerPlugin):
-    VERSION = '1.0'
-
     EVENT_START_PRINTER_INTERFACE = 'START_PRINTER_INTERFACE'
 
     STATE_READY = 0
@@ -50,9 +48,13 @@ class Cloud3DPrinterOSPlugin(octoprint.plugin.StartupPlugin,
             'RR2': {'name': 'Robo3D R2', 'VID': 'OCTO', 'PID': '0RR2'},
             'RC2': {'name': 'Robo3D C2', 'VID': 'OCTO', 'PID': '0RC2'}
         }
+        self.camera_enabled = False
         self.printer_types_js = []
         for key in self.printer_types:
             self.printer_types_js.append({'type': key, 'name': self.printer_types[key]['name']})
+
+    def get_plugin_version(self):
+        return self._plugin_version
 
     ##~~ SettingsPlugin mixin
 
@@ -63,7 +65,8 @@ class Cloud3DPrinterOSPlugin(octoprint.plugin.StartupPlugin,
             verbose=False,
             registered=False,
             serial=True,
-            printer_types_json=json.dumps(self.printer_types_js)
+            printer_types_json=json.dumps(self.printer_types_js),
+            camera_enabled=False
         )
 
     ##~~ AssetPlugin mixin
@@ -90,6 +93,7 @@ class Cloud3DPrinterOSPlugin(octoprint.plugin.StartupPlugin,
 
     def _update_local_settings(self):
         self._logger.setLevel(logging.DEBUG if self._settings.get(['verbose']) else logging.NOTSET)
+        self.camera_enabled = self._settings.get(['camera_enabled'])
         self._logger.debug("_update_local_settings")
 
     ##~~ Softwareupdate hook
@@ -97,13 +101,13 @@ class Cloud3DPrinterOSPlugin(octoprint.plugin.StartupPlugin,
         return dict(
             c3dprinteros=dict(
                 displayName="3DPrinterOS Plugin",
-                displayVersion=self._plugin_version,
+                displayVersion=self.get_plugin_version(),
 
                 # version check: github repository
                 type="github_release",
                 user="3dprinteros",
                 repo="OctoPrint-3DPrinterOS",
-                current=self._plugin_version,
+                current=self.get_plugin_version(),
 
                 # update method: pip
                 pip="https://github.com/3dprinteros/OctoPrint-3DPrinterOS/archive/{target_version}.zip"
@@ -111,8 +115,7 @@ class Cloud3DPrinterOSPlugin(octoprint.plugin.StartupPlugin,
         )
 
     def on_startup(self, host, port):
-        if self._settings.get(['verbose']):
-            self._logger.setLevel(logging.DEBUG)
+        self._update_local_settings()
         self._logger.debug("on_startup")
         self._logger.info("Hello World!")
         self._port = port
@@ -161,6 +164,12 @@ class Cloud3DPrinterOSPlugin(octoprint.plugin.StartupPlugin,
         self.token = token
         return True
 
+    def set_camera(self, enabled):
+        self.camera_enabled = enabled
+        self._settings.set(['camera_enabled'], self.camera_enabled)
+        module = 'Dual camera' if self.camera_enabled else 'Disable camera'
+        self._logger.info('Changing camera module to %s' % module)
+
     def get_logger(self):
         return self._logger
 
@@ -192,6 +201,9 @@ class Cloud3DPrinterOSPlugin(octoprint.plugin.StartupPlugin,
             self.restart_printer_interface()
         elif event == self.EVENT_START_PRINTER_INTERFACE:
             self.restart_printer_interface()
+        elif event == Events.SETTINGS_UPDATED:
+            self._update_local_settings()
+            return
         elif not self.pi:
             return
         if event == Events.DISCONNECTED:
@@ -248,10 +260,11 @@ class Cloud3DPrinterOSPlugin(octoprint.plugin.StartupPlugin,
             hclient = HTTPClient(self, keep_connection_flag=False, max_send_retry_count=0)
             ptype = self.printer_types[self.printer_type]
             request = {'VID': ptype['VID'], 'PID': ptype['PID'], 'SNR': 'OP', 'mac': self.mac,
-                       'type': self.printer_type, 'version': self.VERSION}
+                       'type': self.printer_type, 'version': self.get_plugin_version()}
             if 'code' in data:
                 request['registration_code'] = data['code']
             result = hclient.send(hclient.printer_register_path, json.dumps(request))
+            hclient.close()
             self._logger.info('result %s' % result)
             if result is None:
                 msg = self.last_http_client_error if self.last_http_client_error else\
