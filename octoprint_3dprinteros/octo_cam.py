@@ -39,8 +39,9 @@ class OctoCamera:
         self.parent = parent
         self.http_client = http_client.HTTPClient(self, keep_connection_flag=True, max_send_retry_count=0, debug=False)
         self.ip = '127.0.0.1'
-        self.port = 8080
-        self.camera_url = 'http://' + self.ip + ':' + str(self.port) + '/?action=snapshot'
+        # self.port = 8080
+        # self.camera_url = 'http://' + self.ip + ':' + str(self.port) + '/?action=snapshot'
+        self.camera_url = 'http://' + self.ip + '/webcam/?action=snapshot'
         self._max_image_size = 100000
 
     # @log.log_exception
