@@ -99,6 +99,7 @@ class OctoCamera:
                 image_bytes.seek(0, 2)
                 new_image_size = image_bytes.tell()
                 image_bytes.seek(0)
+                image_bytes = image_bytes.read()
                 self.logger.debug("Image transcoded from size {} to {}".format(image_size, new_image_size))
             self.logger.debug("Image captured from {}".format(self.camera_url))
             return image_bytes
