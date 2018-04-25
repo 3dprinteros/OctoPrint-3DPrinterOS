@@ -7,8 +7,11 @@ import json
 
 import octoprint.plugin
 from octoprint.events import Events
+from octoprint.printer import PrinterInterface
 from octoprint_3dprinteros.printer_interface import PrinterInterface
+from octoprint_3dprinteros.octoprint_sender import Sender
 from octoprint_3dprinteros.http_client import HTTPClient
+from octoprint.filemanager import FileDestinations
 
 
 class Cloud3DPrinterOSPlugin(octoprint.plugin.StartupPlugin,
@@ -124,6 +127,7 @@ class Cloud3DPrinterOSPlugin(octoprint.plugin.StartupPlugin,
         self.printer_type = self._settings.get(['printer_type'])
         self._logger.debug('token %s' % self.token)
         self._settings.set(['registered'], True if self.token else False)
+        self.remove_old_gcode()
 
     def read_token(self):
         data_folder = self.get_plugin_data_folder()
@@ -188,6 +192,16 @@ class Cloud3DPrinterOSPlugin(octoprint.plugin.StartupPlugin,
             self.pi = PrinterInterface(self, self.token)
             self.pi.start()
 
+    def remove_old_gcode(self):
+        self._logger.info('Before remove of ' + Sender.FILE_NAME)
+        path = self._file_manager.join_path(FileDestinations.LOCAL, Sender.FOLDER_NAME, Sender.FILE_NAME)
+        job = self._printer.get_current_job()
+        if job and job.get('file') and job['file'].get('path') == path:
+            self._printer.unselect_file()
+            self._logger.info('Unselect file on printer')
+        self._file_manager.remove_file(FileDestinations.LOCAL, path)
+        self._logger.info('Remove of %s file' % path)
+
     def on_event(self, event, payload):
         self._logger.debug("------------------------------------------------------------------------------")
         self._logger.debug("on_event %s: %s" % (event, str(payload)))
@@ -218,6 +232,9 @@ class Cloud3DPrinterOSPlugin(octoprint.plugin.StartupPlugin,
             self.pi.printer.octo_done()
         elif event == Events.ERROR:
             self.pi.printer.octo_error(payload['error'])
+        elif event == Events.PRINTER_STATE_CHANGED:
+            if payload.get('state_id') == 'OPERATIONAL' and self.pi.printer and not self.pi.printer.cloud_printing_flag:
+                self.remove_old_gcode()
 
     def get_printer(self):
         return self._printer
