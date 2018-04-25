@@ -7,7 +7,6 @@ import json
 
 import octoprint.plugin
 from octoprint.events import Events
-from octoprint.printer import PrinterInterface
 from octoprint_3dprinteros.printer_interface import PrinterInterface
 from octoprint_3dprinteros.octoprint_sender import Sender
 from octoprint_3dprinteros.http_client import HTTPClient
