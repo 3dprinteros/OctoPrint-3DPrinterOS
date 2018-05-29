@@ -10,6 +10,7 @@ $(function() {
         var self = this;
 
         self.settingsModel = parameters[0];
+        self.fileModel = parameters[1];
         self.registering = ko.observable(false);
         self.registrationFailed = ko.observable(false);
         self.registrationFailedReason = ko.observable("");
@@ -20,18 +21,22 @@ $(function() {
         self.registeredEmail = ko.observable('');
         self.registerIndex = 0;
 
+        var downloadLinkFunc = self.fileModel.downloadLink;
+        self.fileModel.downloadLink = function (data) {
+            if (data['origin']=='local' && data['path']=='3dprinteros/3dprinteros.gcode') {
+                return false;
+            }
+            return downloadLinkFunc(data);
+        };
+
         self.onBeforeBinding = function() {
             console.log('onBeforeBinding');
-            console.log(self);
             self.settings = self.settingsModel.settings.plugins.c3dprinteros;
             self.printerTypes(JSON.parse(self.settings.printer_types_json()));
-            console.log(self.settings);
-            console.log(self.printerTypes());
         };
 
         self.onSettingsShown = function() {
             console.log('onSettingsShown');
-            console.log(self.settings, self.settings.registered());
             self.printerRegistered(self.settings.registered());
         };
 
@@ -100,7 +105,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push({
         construct: c3DPrinterOSViewModel,
-        dependencies: [ 'settingsViewModel' ],
+        dependencies: [ 'settingsViewModel', 'filesViewModel' ],
         elements: [ '#settings_plugin_3dprinteros' ]
     });
 });
