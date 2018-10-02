@@ -141,8 +141,8 @@ class Sender(BaseSender):
             if len(self.temps) == 2:
                 self.temps.append(0)
                 self.target_temps.append(0)
-            self.temps[1] = ctemps['tool1']['actual']
-            self.target_temps[1] = ctemps['tool1']['target']
+            self.temps[2] = ctemps['tool1']['actual']
+            self.target_temps[2] = ctemps['tool1']['target']
         return
 
     def get_temps(self):

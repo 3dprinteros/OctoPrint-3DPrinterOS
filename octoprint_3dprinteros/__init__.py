@@ -45,8 +45,6 @@ class Cloud3DPrinterOSPlugin(octoprint.plugin.StartupPlugin,
         self.url = None
         self.last_http_client_error = None
         self.printer_types = {
-            'ROBO3D': {'name': 'Robo3D R1', 'VID': '03EB', 'PID': '204B'},
-            'ROBO3D_R1PLUS': {'name': 'Robo3D R1+', 'VID': '2341', 'PID': '0010'},
             'RR2': {'name': 'Robo3D R2', 'VID': 'OCTO', 'PID': '0RR2'},
             'RC2': {'name': 'Robo3D C2', 'VID': 'OCTO', 'PID': '0RC2'}
         }
@@ -63,7 +61,7 @@ class Cloud3DPrinterOSPlugin(octoprint.plugin.StartupPlugin,
     def get_settings_defaults(self):
         return dict(
             url="acorn.3dprinteros.com",
-            printer_type="ROBO3D_R1PLUS",
+            printer_type="RR2",
             verbose=False,
             registered=False,
             serial=True,
