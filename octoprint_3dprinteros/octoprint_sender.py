@@ -55,7 +55,7 @@ class Sender(BaseSender):
         path = self.file_manager.add_folder(FileDestinations.LOCAL, self.FOLDER_NAME)
         path = self.file_manager.join_path(FileDestinations.LOCAL, path, self.FILE_NAME)
         res = self.file_manager.add_file(FileDestinations.LOCAL, path, StreamWrapper(path, io.BytesIO(gcodes)),
-                                         allow_overwrite=True)
+                                         allow_overwrite=True, analysis={})
         if not res:
             self.parent.register_error(604, "Some error on file upload to OctoPrint", is_blocking=True)
             return False
@@ -141,8 +141,8 @@ class Sender(BaseSender):
             if len(self.temps) == 2:
                 self.temps.append(0)
                 self.target_temps.append(0)
-            self.temps[1] = ctemps['tool1']['actual']
-            self.target_temps[1] = ctemps['tool1']['target']
+            self.temps[2] = ctemps['tool1']['actual']
+            self.target_temps[2] = ctemps['tool1']['target']
         return
 
     def get_temps(self):
