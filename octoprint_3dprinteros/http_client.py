@@ -15,6 +15,7 @@ import time
 import json
 import uuid
 import httplib
+import ssl
 from subprocess import Popen, PIPE
 
 import platforms
@@ -122,7 +123,8 @@ class HTTPClient:
         while not self.parent.stop_flag:
             try:
                 if self.HTTPS_MODE:
-                    connection = httplib.HTTPSConnection(self.url, port = 443, timeout = self.timeout)
+                    # connection = httplib.HTTPSConnection(self.url, port = 443, timeout = self.timeout)
+                    connection = httplib.HTTPSConnection(self.url, port = 443, timeout = self.timeout, context=ssl._create_unverified_context())
                 else:
                     connection = httplib.HTTPConnection(self.url, port = 80, timeout = self.timeout)
                 connection.connect()
