@@ -47,6 +47,7 @@ class Cloud3DPrinterOSPlugin(octoprint.plugin.StartupPlugin,
         self.printer_types = {
             'RR2': {'name': 'Robo3D R2', 'VID': 'OCTO', 'PID': '0RR2'},
             'RC2': {'name': 'Robo3D C2', 'VID': 'OCTO', 'PID': '0RC2'},
+            'MGM3': {'name': 'MakerGear M3-ID', 'VID': 'OCTO', 'PID': 'MGM3'},
             'TLDQ2': {'name': 'TRILAB DeltiQ 2', 'VID': 'OCTO', 'PID': '0TD2'}
         }
         self.camera_enabled = False
