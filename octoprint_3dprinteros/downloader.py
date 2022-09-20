@@ -16,7 +16,6 @@ import tempfile
 import requests
 import threading
 
-# import log
 
 class Downloader(threading.Thread):
 
@@ -33,7 +32,6 @@ class Downloader(threading.Thread):
         self.logger = parent.logger
         threading.Thread.__init__(self, name="Downloader")
 
-    # @log.log_exception
     def run(self):
         self.logger.info('Starting downloading')
         downloaded_filename = self.download()
@@ -72,9 +70,12 @@ class Downloader(threading.Thread):
             if retry:
                 self.logger.warning("Download retry/resume N%d" % retry)
             self.logger.info("Connecting to " + self.url)
-            resume_header = {'Range': 'bytes=%d-' % resume_byte_pos}
+            headers = { 'Accept-Encoding': 'identity, deflate, compress, gzip',
+                     'Accept': '*/*', 'User-Agent': 'python-requests/{requests.__version__}'}
+            if resume_byte_pos:
+                headers['Range'] = 'bytes=%d-' % resume_byte_pos
             try:
-                request = requests.get(self.url, headers = resume_header, stream=True, timeout = self.CONNECTION_TIMEOUT)
+                request = requests.get(self.url, headers = headers, stream=True, timeout = self.CONNECTION_TIMEOUT)
             except Exception as e:
                 request = None
                 self.parent.register_error(65, "Unable to open download link: " + str(e), is_blocking=False)
@@ -88,6 +89,9 @@ class Downloader(threading.Thread):
                     if downloaded_size == download_length:
                         self.tmp_file.close()
                         return self.tmp_file.name
+                    elif downloaded_size > download_length:
+                        self.parent.register_error(66, 'Error while downloading: data is corrupted', is_blocking=True)
+                        break
             finally:
                 if request:
                     request.close()
@@ -97,19 +101,19 @@ class Downloader(threading.Thread):
 
     def download_chunks(self, request, download_length):
         # Taking +1 byte with each chunk to compensate file length tail less than 100 bytes when dividing by 100
-        percent_length = download_length / 100 + 1
+        percent_length = int(download_length / 100 + 1)
         total_size = 0
         try:
             for chunk in request.iter_content(percent_length):
+                total_size = request.raw.tell()
                 if self.cancel_flag or self.parent.stop_flag:
                     self.logger.info('Download canceled')
                     break
                 self.tmp_file.write(chunk)
                 self.percent += 1
-                total_size += len(chunk)
                 self.logger.info('File downloading : %d%%' % self.percent)
         except Exception as e:
-            self.parent.register_error(66, 'Error while downloading: ' + str(e.message), is_blocking=False)
+            self.parent.register_error(66, 'Error while downloading: ' + str(e), is_blocking=False)
         finally:
             return total_size
 
