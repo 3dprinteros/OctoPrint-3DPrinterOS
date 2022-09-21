@@ -84,7 +84,7 @@ $(function() {
                 } else {
                     if (response.code && response.code!=self.registrationCode()) {
                         self.registrationCode(response.code);
-                        self.registrationLink('https://'+self.settings.url()+'/printing/');
+                        self.registrationLink('https://'+self.settings.site_url()+'/printing/');
                     }
                     setTimeout(function () { self.checkRegistrationStatus(index); }, 3000);
                 }

@@ -32,6 +32,9 @@ class Sender(BaseSender):
         self.cloud_printing_flag = False
         self.cloud_printing_init_flag = False
         self.percent = 0
+        self.current_data = None
+        self.file_pos = 0
+        self.print_time_left = 0
         # self.printer.commands()
 
     def load_gcodes(self, gcodes):
@@ -121,13 +124,28 @@ class Sender(BaseSender):
 
     def get_percent(self):
         if self.is_printing():
-            self.percent = int(self.printer.get_current_data()['progress']['completion'])
+            percent = self.get_current_data()['progress']['completion']
+            if percent is not None:
+                self.percent = int(percent)
         return self.percent
 
     def get_current_line_number(self):
         if self.is_printing():
-            return int(self.printer.get_current_data()['progress']['filepos'])
-        return 0
+            file_pos = self.get_current_data()['progress']['filepos']
+            if file_pos is not None:
+                self.file_pos = int(file_pos)
+        else:
+            self.file_pos = 0
+        return self.file_pos
+
+    def get_time_left(self):
+        if self.is_printing():
+            print_time_left = self.get_current_data()['progress']['printTimeLeft']
+            if print_time_left is not None:
+                self.print_time_left = int(print_time_left)
+        else:
+            self.print_time_left = 0
+        return self.print_time_left
 
     def update_temps(self):
         ctemps = self.printer.get_current_temperatures()
@@ -144,6 +162,11 @@ class Sender(BaseSender):
             self.temps[2] = ctemps['tool1']['actual']
             self.target_temps[2] = ctemps['tool1']['target']
         return
+
+    def get_current_data(self, refresh_from_octo=False):
+        if refresh_from_octo and self.printer:
+            self.current_data = self.printer.get_current_data()
+        return self.current_data
 
     def get_temps(self):
         return self.temps

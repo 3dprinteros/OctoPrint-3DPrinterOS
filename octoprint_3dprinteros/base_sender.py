@@ -74,7 +74,7 @@ class BaseSender:
             self.logger.debug("Done loading gcodes. Time:" + str(time.time()-start_time))
 
     def set_filename(self, filename):
-        self.filename = str(filename) if filename else None
+        self.filename = filename if filename and (isinstance(filename, unicode) or isinstance(filename, str)) else None
 
     def get_position(self):
         return self.position
