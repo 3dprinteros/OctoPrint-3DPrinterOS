@@ -63,8 +63,8 @@ class Cloud3DPrinterOSPlugin(octoprint.plugin.StartupPlugin,
 
     def get_settings_defaults(self):
         return dict(
-            url="cli-cloud.3dprinteros.com",
-            site_url="cloud.3dprinteros.com",
+            url="cli-acorn.3dprinteros.com",
+            site_url="acorn.3dprinteros.com",
             printer_type="RR2",
             verbose=False,
             registered=False,
