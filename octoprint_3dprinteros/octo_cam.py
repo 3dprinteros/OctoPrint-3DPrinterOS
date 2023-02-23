@@ -74,7 +74,7 @@ class OctoCamera:
             if frame:
                 # self.logger.debug("Got frame from camera N" + str(number))
                 self.send_frame(frame)
-            else:
+            elif self.is_verbose():
                 self.logger.warning("No frame from camera")
             while time.time() < frame_start_time + 0.001 + self.min_loop_time:
                 time.sleep(0.01)
@@ -123,7 +123,8 @@ class OctoCamera:
             r.raise_for_status()
             image_bytes = r.content
         except Exception as e:
-            self.logger.exception("Could not capture image from %s: %s" % (self.camera_url, str(e)))
+            if self.is_verbose():
+                self.logger.exception("Could not capture image from %s: %s" % (self.camera_url, str(e)))
             return
         if not image_bytes:
             return
@@ -155,3 +156,6 @@ class OctoCamera:
 
     def register_error(self, code, message, is_blocking=False):
         self.logger.warning("Error N%d. %s" % (code, message))
+
+    def is_verbose(self):
+        return self.parent.is_verbose()

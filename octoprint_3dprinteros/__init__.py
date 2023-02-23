@@ -43,11 +43,14 @@ class Cloud3DPrinterOSPlugin(octoprint.plugin.StartupPlugin,
         self.mac = None
         self.local_ip = None
         self.url = None
+        self.verbose = False
         self.last_http_client_error = None
         self.printer_types = {
             'RR2': {'name': 'Robo3D R2', 'VID': 'OCTO', 'PID': '0RR2'},
             'RC2': {'name': 'Robo3D C2', 'VID': 'OCTO', 'PID': '0RC2'},
-            'CISH': {'name': 'CI SAAM HT', 'VID': 'OCTO', 'PID': 'CISH'}
+            'CISH': {'name': 'CI SAAM HT', 'VID': 'OCTO', 'PID': 'CISH'},
+            'MGM3': {'name': 'MakerGear M3-ID', 'VID': 'OCTO', 'PID': 'MGM3'},
+            'TLDQ2': {'name': 'TRILAB DeltiQ 2', 'VID': 'OCTO', 'PID': '0TD2'}
         }
         self.camera_enabled = False
         self.printer_types_js = []
@@ -61,7 +64,8 @@ class Cloud3DPrinterOSPlugin(octoprint.plugin.StartupPlugin,
 
     def get_settings_defaults(self):
         return dict(
-            url="acorn.3dprinteros.com",
+            url="cli-acorn.3dprinteros.com",
+            site_url="acorn.3dprinteros.com",
             printer_type="RR2",
             verbose=False,
             registered=False,
@@ -89,11 +93,12 @@ class Cloud3DPrinterOSPlugin(octoprint.plugin.StartupPlugin,
 
     def get_template_vars(self):
         return dict(
-            url='https://'+self.url
+            url='https://'+self._settings.get(['site_url'])
         )
 
     def _update_local_settings(self):
-        self._logger.setLevel(logging.DEBUG if self._settings.get(['verbose']) else logging.NOTSET)
+        self.verbose = self._settings.get(['verbose'])
+        self._logger.setLevel(logging.DEBUG if self.verbose else logging.NOTSET)
         self.camera_enabled = self._settings.get(['camera_enabled'])
         self._logger.debug("_update_local_settings")
 

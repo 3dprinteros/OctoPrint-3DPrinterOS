@@ -247,12 +247,15 @@ class PrinterInterface(threading.Thread):
 
     def state_report(self):
         report = {"state": self.get_printer_state()}
-        self.logger.debug('get_current_data %s' % str(self.get_octo_printer().get_current_data()))
-        self.logger.debug('get_current_job %s' % str(self.get_octo_printer().get_current_job()))
-        self.logger.debug('get_current_temperatures %s' % str(self.get_octo_printer().get_current_temperatures()))
-        self.logger.debug('get_state_id %s' % str(self.get_octo_printer().get_state_id()))
+        if self.is_verbose():
+            self.logger.debug('get_current_data %s' % str(self.get_octo_printer().get_current_data()))
+            self.logger.debug('get_current_job %s' % str(self.get_octo_printer().get_current_job()))
+            self.logger.debug('get_current_temperatures %s' % str(self.get_octo_printer().get_current_temperatures()))
+            self.logger.debug('get_state_id %s' % str(self.get_octo_printer().get_state_id()))
         if self.printer:
             try:
+                if self.printer.is_printing():
+                    self.printer.get_current_data(True)
                 if self.is_downloading():
                     report["percent"] = self.printer.get_downloading_percent()
                 else:
@@ -265,9 +268,13 @@ class PrinterInterface(threading.Thread):
                 if self.printer.responses:
                     report["response"] = self.printer.responses[:]
                     self.printer.responses = []
+                self.last_state_report_warning = None
             except Exception as e:
-                report["state"] = self.get_printer_state() #update printer state if in was disconnected during report
-                self.logger.warning("! Exception while forming printer report: " + str(e))
+                report["state"] = self.get_printer_state() #update printer state if it was disconnected during report
+                state_report_warning = "! Exception while forming printer report: " + str(e)
+                if self.last_state_report_warning != state_report_warning:
+                    self.last_state_report_warning = state_report_warning
+                    self.logger.warning(state_report_warning)
         return report
 
     def register_error(self, code, message, is_blocking=False,
@@ -305,7 +312,7 @@ class PrinterInterface(threading.Thread):
     #     self.parent.camera_controller.restart_camera()
 
     def set_name(self, name):
-        self.logger.info("Setting printer name: " + str(name))
+        # self.logger.info("Setting printer name: " + str(name))
         self.set_printer_name(name)
 
     def is_downloading(self):
@@ -336,3 +343,6 @@ class PrinterInterface(threading.Thread):
 
     # def report_problem(self, problem_description):
     #     log.report_problem(problem_description)
+
+    def is_verbose(self):
+        return self.parent.verbose
