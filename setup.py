@@ -33,7 +33,7 @@ plugin_url = "https://github.com/3dprinteros/OctoPrint-3DPrinterOS"
 plugin_license = "proprietary"
 
 # Any additional requirements besides OctoPrint should be listed here
-plugin_requires = ["Python>=3.7", "Pillow", "requests"]
+plugin_requires = ["Pillow", "requests"]
 
 ### --------------------------------------------------------------------------------------------------------------------
 ### More advanced options that you usually shouldn't have to touch follow after this point
@@ -63,6 +63,11 @@ additional_setup_parameters = {}
 
 ########################################################################################################################
 
+import sys
+if sys.version[0] == '2':
+    print("Python 2 is not supported by this plugin version")
+    sys.exit(-1)
+
 from setuptools import setup
 
 try:
@@ -70,7 +75,6 @@ try:
 except:
 	print("Could not import OctoPrint's setuptools, are you sure you are running that under "
 	      "the same python installation that OctoPrint is installed under?")
-	import sys
 	sys.exit(-1)
 
 setup_parameters = octoprint_setuptools.create_plugin_setup_parameters(
