@@ -1,0 +1,134 @@
+{
+  "URL": "cli-cloud.3dprinteros.com",
+  "protocol": {
+    "user_login": false,
+    "encryption": true,
+    "custom_port": 0,
+    "response_time_log": false
+  },
+  "web_interface": {
+    "enabled": false,
+    "browser_opening_on_start": true,
+    "port": 8008,
+    "port_https": 0
+  },
+  "qt_interface": {
+    "enabled": false
+  },
+  "active_detectors": {
+      "StaticDetector": true,
+      "USBDetector": false,
+      "NetworkDetector": false,
+      "KlipperDetector": false,
+      "GPIOUARTDetector": false
+  },
+  "static_printers": [
+  ],
+  "main_loop_period": 1,
+  "printer_loop_period": 2,
+  "linux_rights_warning": false,
+  "wizard_on_start": false,
+  "verbose": false,
+  "logging": {
+    "enabled": false,
+    "per_printer": false,
+    "erase_on_start": false,
+    "auto_report_exceptions": false,
+    "logs_sending": true,
+    "request_skip": 0
+  },
+  "update": {
+    "enabled": false,
+    "auto_update_enabled": false,
+    "check_pause": 600,
+    "no_url_prefix": false
+  },
+  "camera": {
+    "enabled" : true,
+    "default": "MJPGS camera",
+    "switch_type": false,
+    "logging": false,
+    "frame_skip": 5,
+    "hardware_resize": true,
+    "binary_jpeg": false,
+    "restart_on_error_output": false,
+    "empty_frame_error": false,
+    "network_input": true,
+    "reinit_on_no_cam": false,
+    "no_subprocess": true,
+    "http_output" : {
+        "enabled": false,
+        "only_localhost": true,
+        "port": 8009
+    }
+  },
+  "virtual_printer": {
+    "enabled": false,
+    "VID": "2341",
+    "PID": "0042",
+    "SNR": "0",
+    "COM": "/dev/null",
+    "EMU": true,
+    "forced_type": "Marlin"
+  },
+  "remote_control": {
+    "web_server": false,
+    "broadcasting": true,
+    "detectable": false
+  },
+  "plugins": {
+    "enabled": true,
+    "auto_install": true,
+    "auto_enable": true,
+    "allow_active_plugins": false
+  },
+  "vendor": {
+      "name": "apv1"
+  },
+  "gpio": {
+      "enabled": false,
+      "bouncetime": 100,
+      "trigger": "falling",
+      "pull": "up",
+      "buttons": {
+          "cancel_locally": 29,
+          "send_bed_clear": 33
+       }
+  },
+  "print_estimation": {
+      "enabled": true,
+      "by_cloud": true,
+      "by_print_speed": false,
+      "override_clouds": false,
+      "allow_rise_time_left": false
+  },
+  "manage_networking": {
+      "enabled": false
+  },
+  "tray_icon": {
+    "enabled": false,
+    "notifications_enabled": false
+  },
+  "no_empty_serials": true,
+  "backward_compatible_serials": false,
+  "port_parity_hack": true,
+  "keep_print_files": false,
+  "request_dumping": false,
+  "pre_login_ui": false,
+  "subprocess_zip": true,
+  "dynamic_gcodes_buffer": true,
+  "intercept_pause": false,
+  "klipper": {
+      "host_port": "/tmp/printer"
+  },
+  "gpio_uart": {
+      "enabled": false,
+      "ports": ["/dev/ttyAMA0"]
+  },
+  "disable_resend_max": false,
+  "dim_display_on_quit": true,
+  "restore_pos_on_resume": false,
+  "sdcard_upload_block_size": 4096,
+  "no_ok_timeout": true,
+  "custom_settings_home": ""
+}

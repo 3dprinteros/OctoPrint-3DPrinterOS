@@ -1,4 +1,4 @@
-include README.md
+include README.md octoprint_3dprinteros/*.json
 recursive-include octoprint_3dprinteros/templates *
 recursive-include octoprint_3dprinteros/translations *
 recursive-include octoprint_3dprinteros/static *

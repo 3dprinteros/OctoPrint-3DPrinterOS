@@ -1,0 +1,3490 @@
+[
+    {
+        "alias": "R(DUAL)",
+        "baudrate": [
+            115200
+        ],
+        "extruder_count": 2,
+        "min_coords_corner": "RF",
+        "name": "MakerBot The Replicator (Dual)",
+        "sender": "makerbot_sender",
+        "vids_pids": [
+            [
+                "23C1",
+                "D314"
+            ]
+        ]
+    },
+    {
+        "alias": "R(SINGLE)",
+        "baudrate": [
+            115200
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "RF",
+        "name": "MakerBot The Replicator",
+        "sender": "makerbot_sender",
+        "vids_pids": [
+            [
+                "23C1",
+                "D314"
+            ]
+        ]
+    },
+    {
+        "alias": "Virtual",
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "Virtual Printer",
+        "sender": "virtual_printer",
+        "vids_pids": [
+            [
+                "ZZZZ",
+                "ZZZZ"
+            ]
+        ]
+    },
+    {
+        "alias": "U",
+        "baudrate": [
+            250000,
+            115200
+        ],
+        "end_gcodes": [
+            "M107",
+            "M104 S0",
+            "M140 S0",
+            "G91",
+            "G1 E-6 F30",
+            "G1 Z+1 E-5 X-20 Y-20 F9000",
+            "G28 X0 Y0",
+            "M84",
+            "G90",
+            "M117 Ultimaker Ready."
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LN",
+        "name": "Ultimaker",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "4745",
+                "0001"
+            ]
+        ]
+    },
+    {
+        "alias": "LULZTAZ",
+        "baudrate": [
+            115200,
+            250000
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LN",
+        "name": "Lulzbot TAZ1-4",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "27B1",
+                "0001"
+            ]
+        ]
+    },
+    {
+        "alias": "R3DLite200",
+        "baudrate": [
+            115200
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "RN",
+        "name": "Rapide3D Lite 200",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "03EB",
+                "204B"
+            ],
+            [
+                "0403",
+                "6001"
+            ]
+        ]
+    },
+    {
+        "alias": "MP_PHARAOH_ED",
+        "baudrate": [
+            115200
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "CC",
+        "name": "Mass Portal Pharaoh ED",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "0403",
+                "6001"
+            ],
+            [
+                "2341",
+                "003D"
+            ]
+        ]
+    },
+    {
+        "alias": "LULZMINI",
+        "baudrate": [
+            115200,
+            250000
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LN",
+        "name": "Lulzbot Mini",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "27B1",
+                "0001"
+            ]
+        ]
+    },
+    {
+        "alias": "HEPHESTOS",
+        "baudrate": [
+            115200,
+            250000
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "G1 Y140 F4800",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "BQ Prusa i3 Hephestos",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "0403",
+                "6001"
+            ]
+        ]
+    },
+    {
+        "alias": "HEPHESTOS_XL",
+        "baudrate": [
+            115200,
+            250000
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "G1 Y180 F4800",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "BQ Prusa i3 Hephestos XL",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "0403",
+                "6001"
+            ],
+            [
+                "2341",
+                "0042"
+            ]
+        ]
+    },
+    {
+        "alias": "WB",
+        "baudrate": [
+            250000,
+            115200
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "BQ WitBox",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "0403",
+                "6001"
+            ]
+        ]
+    },
+    {
+        "alias": "ZMORPH",
+        "end_gcodes": [
+            "G28 X0 Y0",
+            "M104 S0",
+            "M140 S0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LN",
+        "name": "ZMorph",
+        "sender": "smoothie_sender",
+        "vids_pids": [
+            [
+                "1D50",
+                "6015"
+            ]
+        ]
+    },
+    {
+        "alias": "LFCXL",
+        "baudrate": [
+            250000,
+            115200
+        ],
+        "end_gcodes": [
+            "G28 X0 Y0",
+            "M104 S0",
+            "M140 S0",
+            "M84"
+        ],
+        "extruder_count": 2,
+        "min_coords_corner": "LN",
+        "name": "LeapFrog Creatr XL",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "0403",
+                "6001"
+            ]
+        ]
+    },
+    {
+        "alias": "Marlin",
+        "baudrate": [
+            250000,
+            115200
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "Generic Marlin",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "0403",
+                "6001"
+            ],
+            [
+                "16C0",
+                "0483"
+            ],
+            [
+                "2341",
+                "0042"
+            ],
+            [
+                "2341",
+                "0010"
+            ],
+            [
+                "03EB",
+                "204B"
+            ],
+            [
+                "27B1",
+                "0001"
+            ],
+            [
+                "1A86",
+                "7523"
+            ],
+            [
+                "2341",
+                "003E"
+            ],
+            [
+                "0403",
+                "6015"
+            ]
+        ]
+    },
+    {
+        "alias": "LULZTAZ5",
+        "baudrate": [
+            115200,
+            250000
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LN",
+        "name": "Lulzbot TAZ5",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "27B1",
+                "0001"
+            ]
+        ]
+    },
+    {
+        "alias": "U2_GO",
+        "baudrate": [
+            250000
+        ],
+        "end_gcodes": [
+            "M107",
+            "M104 S0",
+            "G28 Z0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "force_port_close": false,
+        "min_coords_corner": "LF",
+        "name": "Ultimaker 2 Go",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "0403",
+                "6001"
+            ],
+            [
+                "4745",
+                "0001"
+            ],
+            [
+                "2341",
+                "0042"
+            ],
+            [
+                "2341",
+                "0010"
+            ]
+        ]
+    },
+    {
+        "alias": "U2",
+        "baudrate": [
+            250000
+        ],
+        "end_gcodes": [
+            "M107",
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0 Z0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "force_port_close": false,
+        "min_coords_corner": "LF",
+        "name": "Ultimaker 2",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "0403",
+                "6001"
+            ],
+            [
+                "4745",
+                "0001"
+            ],
+            [
+                "2341",
+                "0042"
+            ],
+            [
+                "2341",
+                "0010"
+            ]
+        ]
+    },
+    {
+        "alias": "KOSSEL_MINI",
+        "baudrate": [
+            115200
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LN",
+        "name": "Kossel Mini (Experimental)",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "2341",
+                "0042"
+            ],
+            [
+                "03EB",
+                "204B"
+            ]
+        ]
+    },
+    {
+        "alias": "BUKITO",
+        "baudrate": [
+            250000,
+            115200
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "RN",
+        "name": "Bukito - Experimental",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "16C0",
+                "0483"
+            ]
+        ]
+    },
+    {
+        "alias": "LFC",
+        "baudrate": [
+            115200,
+            250000
+        ],
+        "end_gcodes": [
+            "G28 X0 Y0",
+            "M104 S0",
+            "M140 S0",
+            "M84"
+        ],
+        "extruder_count": 2,
+        "min_coords_corner": "LN",
+        "name": "LeapFrog Creatr",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "0403",
+                "6001"
+            ]
+        ]
+    },
+    {
+        "alias": "U2_EXTENDED",
+        "baudrate": [
+            250000
+        ],
+        "end_gcodes": [
+            "M107",
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0 Z0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "Ultimaker 2 Extended",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "0403",
+                "6001"
+            ],
+            [
+                "4745",
+                "0001"
+            ],
+            [
+                "2341",
+                "0042"
+            ],
+            [
+                "2341",
+                "0010"
+            ]
+        ]
+    },
+    {
+        "alias": "LFCHS",
+        "baudrate": [
+            250000,
+            115200
+        ],
+        "end_gcodes": [
+            "G28 X0 Y0",
+            "M104 S0",
+            "M140 S0",
+            "M84"
+        ],
+        "extruder_count": 2,
+        "min_coords_corner": "LN",
+        "name": "LeapFrog Creatr HS",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "0403",
+                "6001"
+            ]
+        ]
+    },
+    {
+        "alias": "FELIX3",
+        "baudrate": [
+            250000,
+            115200
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "RF",
+        "name": "Felix 3.0",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "0403",
+                "6001"
+            ]
+        ]
+    },
+    {
+        "alias": "BUKOBOT",
+        "baudrate": [
+            115200,
+            250000
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "RN",
+        "name": "Bukobot - Experimental",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "0403",
+                "6001"
+            ]
+        ]
+    },
+    {
+        "alias": "BEETF",
+        "baudrate": [
+            250000,
+            115200
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LN",
+        "name": "BeeVeryCreative BeeTheFirst - Experimental (Only for GNU/Linux)",
+        "sender": "beeverycreative",
+        "vids_pids": [
+            [
+                "FFFF",
+                "014E"
+            ],
+            [
+                "29C9",
+                "0001"
+            ]
+        ]
+    },
+    {
+        "alias": "AUP3S",
+        "baudrate": [
+            250000
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "AUP3Steel",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "0403",
+                "6001"
+            ]
+        ]
+    },
+    {
+        "alias": "EVOLUTION",
+        "baudrate": [
+            250000
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "RF",
+        "name": "Stuffmaker Evolution - Experimental",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "0403",
+                "6001"
+            ]
+        ]
+    },
+    {
+        "alias": "AIRWOLF3DXL",
+        "baudrate": [
+            250000
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "Airwolf3D XL - Experimental",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "27B1",
+                "0001"
+            ]
+        ]
+    },
+    {
+        "alias": "US5",
+        "allow_comments": true,
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 2,
+        "min_coords_corner": "LF",
+        "name": "Ultimaker S5",
+        "sender": "u3_sender",
+        "vids_pids": [
+            [
+                "ZZZZ",
+                "0US5"
+            ]
+        ]
+    },
+    {
+        "alias": "ROSTOCK2",
+        "baudrate": [
+            250000
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "RN",
+        "name": "SeeMeCNC Rostock Max v2 - Experimental",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "27B1",
+                "0001"
+            ]
+        ]
+    },
+    {
+        "alias": "HERCULES_STRONG",
+        "baudrate": [
+            250000
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LN",
+        "name": "Hercules Strong",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "2341",
+                "0042"
+            ]
+        ]
+    },
+    {
+        "alias": "HORI_H1_GOLD",
+        "baudrate": [
+            115200
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LN",
+        "name": "Hori H1 GOLD",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "2341",
+                "0042"
+            ]
+        ]
+    },
+    {
+        "alias": "PRUSA_I3",
+        "baudrate": [
+            115200,
+            250000
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "Prusa i3",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "0403",
+                "6001"
+            ],
+            [
+                "16C0",
+                "0483"
+            ],
+            [
+                "2341",
+                "0042"
+            ],
+            [
+                "03EB",
+                "204B"
+            ],
+            [
+                "27B1",
+                "0001"
+            ],
+            [
+                "1A86",
+                "7523"
+            ],
+            [
+                "2341",
+                "003E"
+            ],
+            [
+                "0403",
+                "6015"
+            ]
+        ]
+    },
+    {
+        "alias": "AIRWOLF_HD2X",
+        "baudrate": [
+            250000
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "Airwolf HD2x - Experimental",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "27B1",
+                "0001"
+            ]
+        ]
+    },
+    {
+        "alias": "VELLEMAN_K8400",
+        "baudrate": [
+            250000,
+            115200
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "RN",
+        "name": "Velleman K8400 - Experimental",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "0403",
+                "6001"
+            ],
+            [
+                "16C0",
+                "0483"
+            ],
+            [
+                "2341",
+                "0042"
+            ],
+            [
+                "03EB",
+                "204B"
+            ],
+            [
+                "27B1",
+                "0001"
+            ]
+        ]
+    },
+    {
+        "alias": "POLYPRINTER_229",
+        "baudrate": [
+            250000,
+            115200
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "PolyPrinter 229 - Experimental",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "16C0",
+                "0483"
+            ]
+        ]
+    },
+    {
+        "alias": "ATOM",
+        "baudrate": [
+            250000
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "RF",
+        "name": "THE ATOM - Experimental",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "2341",
+                "0042"
+            ]
+        ]
+    },
+    {
+        "alias": "ECUBMAKER_FANTASY",
+        "baudrate": [
+            115200,
+            250000
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 2,
+        "min_coords_corner": "LN",
+        "name": "EcubMaker FANTASY - Experimental",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "10C4",
+                "EA60"
+            ]
+        ]
+    },
+    {
+        "alias": "PrintrBot_PLAY",
+        "baudrate": [
+            250000,
+            115200
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "PrintrBot Play",
+        "no_DTR": true,
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "2974",
+                "0503"
+            ],
+            [
+                "16C0",
+                "0483"
+            ]
+        ]
+    },
+    {
+        "alias": "D4",
+        "baudrate": [
+            115200
+        ],
+        "extruder_count": 2,
+        "min_coords_corner": "LN",
+        "name": "Wanhao Duplicator 4",
+        "sender": "makerbot_sender",
+        "vids_pids": [
+            [
+                "23C1",
+                "D314"
+            ]
+        ]
+    },
+    {
+        "alias": "ROBO3D",
+        "baudrate": [
+            250000
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "RN",
+        "name": "Robo3D R1",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "03EB",
+                "204B"
+            ]
+        ]
+    },
+    {
+        "alias": "PrintrBotHB",
+        "baudrate": [
+            250000,
+            115200
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "PrintrBot Simple Metal With Heated Bed",
+        "no_DTR": true,
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "2974",
+                "0503"
+            ],
+            [
+                "16C0",
+                "0483"
+            ]
+        ]
+    },
+    {
+        "alias": "MBOT_GRID_II_PLUS",
+        "baudrate": [
+            115200
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "RF",
+        "name": "MBot Grid II+",
+        "sender": "makerbot_sender",
+        "vids_pids": [
+            [
+                "23C1",
+                "D314"
+            ]
+        ]
+    },
+    {
+        "alias": "MP_ORCA_.30",
+        "baudrate": [
+            250000
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "Mendelparts Orca .30",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "0403",
+                "6001"
+            ]
+        ]
+    },
+    {
+        "alias": "3DPOS_BE",
+        "baudrate": [
+            250000
+        ],
+        "end_gcodes": [
+            "M107",
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0 Z0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "force_port_close": false,
+        "min_coords_corner": "LF",
+        "name": "Black Edition",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "16D0",
+                "0B3A"
+            ]
+        ]
+    },
+    {
+        "alias": "TD_PRO",
+        "baudrate": [
+            250000
+        ],
+        "end_gcodes": [
+            "M107",
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0 Z0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "force_port_close": false,
+        "min_coords_corner": "LF",
+        "name": "Tinkerine Ditto PRO",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "2341",
+                "0010"
+            ],
+            [
+                "2341",
+                "0042"
+            ]
+        ]
+    },
+    {
+        "alias": "U3E",
+        "allow_comments": true,
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 2,
+        "min_coords_corner": "LF",
+        "name": "Ultimaker 3 Extended",
+        "sender": "u3_sender",
+        "vids_pids": [
+            [
+                "ZZZZ",
+                "0U3E"
+            ]
+        ]
+    },
+    {
+        "alias": "FT_RR2020_PRUSA_I3",
+        "baudrate": [
+            115200,
+            250000
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "Folger Tech RepRap 2020 Prusa i3",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "2341",
+                "0042"
+            ]
+        ]
+    },
+    {
+        "alias": "VOLGOBOT",
+        "baudrate": [
+            115200
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "VolgoBot FFF1.0",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "03EB",
+                "204B"
+            ]
+        ]
+    },
+    {
+        "alias": "Repetier",
+        "baudrate": [
+            250000,
+            115200
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "Generic Repetier",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "0403",
+                "6001"
+            ],
+            [
+                "16C0",
+                "0483"
+            ],
+            [
+                "2341",
+                "0042"
+            ],
+            [
+                "03EB",
+                "204B"
+            ],
+            [
+                "0403",
+                "6001"
+            ],
+            [
+                "2341",
+                "0010"
+            ],
+            [
+                "1A86",
+                "7523"
+            ],
+            [
+                "2341",
+                "003E"
+            ],
+            [
+                "0403",
+                "6015"
+            ]
+        ]
+    },
+    {
+        "alias": "AIRWOLF_AXIOM",
+        "baudrate": [
+            250000
+        ],
+        "end_gcodes": [
+            "G1 Z260 F1000",
+            "M104 S0",
+            "M140 S0",
+            "M107",
+            "G92 E0",
+            "G1 E-3 F300",
+            "G28 X0 Y0 F8000",
+            "G1 Z260 F1000",
+            "M84",
+            "G90",
+            "M42 P6 S0"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "Airwolf AXIOM",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "27B1",
+                "0001"
+            ]
+        ]
+    },
+    {
+        "alias": "PrintrBotPlus",
+        "baudrate": [
+            250000,
+            115200
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "PrintrBotPlus",
+        "no_DTR": true,
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "16C0",
+                "0483"
+            ],
+            [
+                "2974",
+                "0620"
+            ],
+            [
+                "2974",
+                "0503"
+            ]
+        ]
+    },
+    {
+        "alias": "MBotMini",
+        "baudrate": [
+            115200
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "MBot Mini",
+        "sender": "makerbot_sender",
+        "vids_pids": [
+            [
+                "23C1",
+                "D314"
+            ],
+            [
+                "XXXX",
+                "XXXX"
+            ]
+        ]
+    },
+    {
+        "alias": "MB5thMini",
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "MakerBot 5th Mini",
+        "network_detect": {
+            "scanner": "broadcast",
+            "IP_field": "ip",
+            "PID_field": "pid",
+            "SNR_field": "iserial",
+            "VID_field": "vid",
+            "broadcast_port": 12309,
+            "json_message": true,
+            "json_response": true,
+            "listen_port": 12308,
+            "message": {
+                "command": "broadcast"
+            },
+
+            "target_port": 12307
+        },
+        "operational_timeout": 60,
+        "sender": "birdwing_sender",
+        "vids_pids": [
+            [
+                "23C1",
+                "0004"
+            ]
+        ]
+    },
+    {
+        "alias": "PrintrBotMPlus",
+        "baudrate": [
+            250000,
+            115200
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "PrintrBot Metal Plus",
+        "no_DTR": true,
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "16C0",
+                "0483"
+            ],
+            [
+                "2974",
+                "0503"
+            ]
+        ]
+    },
+    {
+        "alias": "Di3",
+        "baudrate": [
+            115200,
+            250000
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "Wanhao Duplicator i3",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "0403",
+                "6001"
+            ]
+        ]
+    },
+    {
+        "alias": "R2",
+        "baudrate": [
+            115200
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LN",
+        "name": "Makerbot Replicator 2",
+        "sender": "makerbot_sender",
+        "vids_pids": [
+            [
+                "23C1",
+                "B015"
+            ],
+            [
+                "23C1",
+                "B016"
+            ],
+            [
+                "23C1",
+                "B017"
+            ]
+        ]
+    },
+    {
+        "alias": "MB5thReplicatorZ18",
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "MakerBot 5th Replicator Z18",
+        "network_detect": {
+            "scanner": "broadcast",
+            "IP_field": "ip",
+            "PID_field": "pid",
+            "SNR_field": "iserial",
+            "VID_field": "vid",
+            "broadcast_port": 12309,
+            "json_message": true,
+            "json_response": true,
+            "listen_port": 12308,
+            "message": {
+                "command": "broadcast"
+            },
+            "target_port": 12307
+        },
+        "operational_timeout": 60,
+        "sender": "birdwing_sender",
+        "vids_pids": [
+            [
+                "23C1",
+                "0006"
+            ],
+            [
+                "XXXX",
+                "XXXX"
+            ]
+        ]
+    },
+    {
+        "name": "KODAK Portrait",
+        "alias": "K_PORTRAIT",
+        "sender": "kodak_sender",
+        "extruder_count": 2,
+        "vids_pids": [
+            [
+                "0KDK",
+                "0001"
+            ]
+        ],
+        "baudrate": [
+            250000
+        ],
+        "crazy_serial_number": false,
+        "no_DTR": true,
+        "end_gcodes": [
+            "M104 T0 S0",
+            "M104 T1 S0",
+            "M140 S0",
+            "M107",
+            "G28 X0 Y0",
+            "M18"
+        ],
+        "min_coords_corner": "RF",
+        "x": "200",
+        "y": "200",
+        "z": "250",
+        "filament_diameter": "1.75",
+        "offset_x": "0",
+        "offset_y": "200",
+        "nozzle_offset_y": 0,
+        "keep_warm_gcode": "M104 T0 S$left_tool_temp\nM140 S$platform_temp",
+        "gcodecheck_re_file": "ulti-marlim.txt"
+    },
+    {
+        "name": "LOOP PRO X",
+        "alias": "LOOP3D",
+        "sender": "threaded_sender",
+        "extruder_count": 1,
+        "baudrate": [
+            250000
+        ],
+        "vids_pids": [
+            [
+                "1D50",
+                "60EC"
+            ]
+        ],
+        "end_gcodes": [
+            "T0",
+            "M108",
+            "G28 XY",
+            "M83",
+            "M106 S0",
+            "G10 S0 T0",
+            "M140 S0",
+            "M84 S10"
+        ],
+        "min_coords_corner": "LF",
+        "x": "500",
+        "y": "349",
+        "z": "500",
+        "filament_diameter": "1.75",
+        "offset_x": "0",
+        "offset_y": "349",
+        "keep_warm_gcode": "M104 T0 S$left_tool_temp\nM140 S$platform_temp",
+        "gcodecheck_re_file": "marlin-marlin.txt"
+    },
+    {
+        "name": "LOOP PRO X+",
+        "alias": "LOOP3DPXP",
+        "sender": "sdcard_print_sender",
+        "extruder_count": 1,
+        "vids_pids": [
+            [
+                "1D50",
+                "60EC"
+            ]
+        ],
+        "baudrate": [
+            250000
+        ],
+        "crazy_serial_number": false,
+        "no_DTR": true,
+        "no_homing_on_connect": true,
+        "no_ok_timeout": true,
+        "on_cancel_gcodes": [
+            "M104 T0 S0",
+            "M104 T1 S0",
+            "M140 S0",
+            "M107",
+            "G28 X0 Y0",
+            "M18"
+        ],
+        "min_coords_corner": "LF",
+        "x": "500",
+        "y": "349",
+        "z": "500",
+        "filament_diameter": "1.75",
+        "offset_x": "0",
+        "offset_y": "349",
+        "keep_warm_gcode": "M104 T0 S$left_tool_temp\nM140 S$platform_temp",
+        "gcodecheck_re_file": "marlin-marlin.txt"
+    },
+    {
+        "alias": "MGEARM2",
+        "baudrate": [
+            115200
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "Makergear M2",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "27B1",
+                "0001"
+            ]
+        ]
+    },
+    {
+        "alias": "CraftBot_PLUS",
+        "baudrate": [
+            250000,
+            115200
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "CraftBot PLUS",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "04D8",
+                "000A"
+            ]
+        ]
+    },
+    {
+        "alias": "R2X",
+        "baudrate": [
+            115200
+        ],
+        "extruder_count": 2,
+        "min_coords_corner": "LN",
+        "name": "Makerbot Replicator 2X",
+        "sender": "makerbot_sender",
+        "vids_pids": [
+            [
+                "23C1",
+                "B017"
+            ],
+            [
+                "21C1",
+                "B017"
+            ],
+            [
+                "23C1",
+                "B015"
+            ],
+            [
+                "23C1",
+                "B016"
+            ]
+        ]
+    },
+    {
+        "alias": "type_a_machines_series_1",
+        "baudrate": [
+            250000,
+            230400
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "Type A Machines Series 1",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "03EB",
+                "204B"
+            ],
+            [
+                "2341",
+                "0010"
+            ]
+        ]
+    },
+    {
+        "alias": "LULZTAZ6",
+        "baudrate": [
+            115200,
+            250000
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "Lulzbot TAZ6",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "27B1",
+                "0001"
+            ]
+        ]
+    },
+    {
+        "alias": "KOSSEL_PRO",
+        "baudrate": [
+            "250000"
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "OpenBeam Kossel Pro - Experimental",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "YYYY",
+                "YYYY"
+            ]
+        ]
+    },
+    {
+        "alias": "MZ3D256",
+        "baudrate": [
+            "115200"
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "MZ3D-256 - Experimental",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "2341",
+                "0042"
+            ]
+        ]
+    },
+    {
+        "alias": "FABX2.0",
+        "baudrate": [
+            "250000",
+            "115200"
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "FABX v2.0 - Experimental",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "YYYY",
+                "YYYY"
+            ]
+        ]
+    },
+    {
+        "alias": "DREMEL2",
+        "crazy_serial_number": true,
+        "end_gcodes": [
+            "M107",
+            "M104 S0 T0",
+            "G28 X0 Y0",
+            "M132 X Y Z A",
+            "G91",
+            "M18"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "RF",
+        "name": "Dremel 3D40 Idea Builder",
+        "offset_toolpath": true,
+        "sender": "dremel_sender",
+        "vids_pids": [
+            [
+                "2A89",
+                "888B"
+            ]
+        ]
+    },
+    {
+        "alias": "FOLGER_PRUSA_I3",
+        "baudrate": [
+            "250000"
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "Folger Tech RepRap 2020 Prusa i3 Full Aluminum - Experimental",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "2341",
+                "0042"
+            ]
+        ]
+    },
+    {
+        "alias": "BCN3D_SIGMA",
+        "baudrate": [
+            250000
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "G1 Y140 F4800",
+            "M84"
+        ],
+        "extruder_count": 2,
+        "min_coords_corner": "LF",
+        "name": "BCN3D Sigma",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "0403",
+                "6001"
+            ]
+        ]
+    },
+    {
+        "alias": "Hyvision_Cubicon_Single_110F",
+        "baudrate": [
+            250000
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "Hyvision Cubicon Single 110F",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "0403",
+                "6001"
+            ],
+            [
+                "16C0",
+                "0483"
+            ],
+            [
+                "2341",
+                "0042"
+            ],
+            [
+                "03EB",
+                "204B"
+            ],
+            [
+                "27B1",
+                "0001"
+            ],
+            [
+                "1A86",
+                "7523"
+            ],
+            [
+                "2341",
+                "003E"
+            ],
+            [
+                "0403",
+                "6015"
+            ]
+        ]
+    },
+    {
+        "alias": "PrintrBotSMEB",
+        "baudrate": [
+            250000,
+            115200
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "Printrbot Simple Metal With Extended Bed - Experimental",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "2974",
+                "0503"
+            ],
+            [
+                "16C0",
+                "0483"
+            ]
+        ]
+    },
+    {
+        "alias": "SHAPERJET",
+        "baudrate": [
+            "250000"
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "ShaperJet - Experimental",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "2341",
+                "0042"
+            ]
+        ]
+    },
+    {
+        "alias": "XCORE2",
+        "baudrate": [
+            115200
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "Xplorer 3D X-CORE II - Experimental",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "0403",
+                "6001"
+            ]
+        ]
+    },
+    {
+        "alias": "DREMEL",
+        "crazy_serial_number": true,
+        "end_gcodes": [
+            "M107",
+            "M104 S0 T0",
+            "G28 X0 Y0",
+            "M132 X Y Z A",
+            "G91",
+            "M18"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "RF",
+        "name": "Dremel 3D Idea Builder",
+        "offset_toolpath": true,
+        "read_packet_length": 512,
+        "sender": "dremel_sender",
+        "vids_pids": [
+            [
+                "2A89",
+                "8889"
+            ]
+        ]
+    },
+    {
+        "alias": "DAVINCI1.0",
+        "baudrate": [
+            "250000"
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "XYZ Da Vinci 1.0 - Experimental",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "2341",
+                "003E"
+            ]
+        ]
+    },
+    {
+        "alias": "ROSTOCK1",
+        "baudrate": [
+            "250000"
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "SeeMeCNC Rostock Max - Experimental",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "YYYY",
+                "YYYY"
+            ]
+        ]
+    },
+    {
+        "alias": "SEEMECNC_ORION_DELTA",
+        "baudrate": [
+            250000
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "RN",
+        "name": "SeeMeCNC Orion Delta - Experimental",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "27B1",
+                "0001"
+            ]
+        ]
+    },
+    {
+        "alias": "FF_DREAMER",
+        "crazy_serial_number": true,
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 2,
+        "min_coords_corner": "RF",
+        "name": "FlashForge Dreamer",
+        "offset_toolpath": true,
+        "sender": "ffd_sender",
+        "vids_pids": [
+            [
+                "0315",
+                "0001"
+            ],
+            [
+                "2B71",
+                "0001"
+            ]
+        ]
+    },
+    {
+        "alias": "ROBO3D_R1PLUS",
+        "baudrate": [
+            250000,
+            115200
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "Robo3D R1+",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "2341",
+                "0010"
+            ]
+        ]
+    },
+    {
+        "alias": "COLIDO_DIY",
+        "baudrate": [
+            250000,
+            115200
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "CoLiDo DIY - Experimental",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "0403",
+                "6001"
+            ]
+        ]
+    },
+    {
+        "alias": "MB5thReplicatorPLUS",
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "MakerBot 5th Replicator+",
+        "network_detect": {
+            "scanner": "broadcast",
+            "IP_field": "ip",
+            "PID_field": "pid",
+            "SNR_field": "iserial",
+            "VID_field": "vid",
+            "broadcast_port": 12309,
+            "json_message": true,
+            "json_response": true,
+            "listen_port": 12308,
+            "message": {
+                "command": "broadcast"
+            },
+            "target_port": 12307
+        },
+        "operational_timeout": 60,
+        "sender": "birdwing_sender",
+        "vids_pids": [
+            [
+                "23C1",
+                "0008"
+            ]
+        ]
+    },
+    {
+        "name": "MakerBot Method",
+        "alias": "MBMethod",
+        "sender": "mb_method_sender",
+        "extruder_count": 2,
+        "vids_pids": [
+            [
+                "23C1",
+                "000E"
+            ]
+        ],
+        "network_detect": {
+            "broadcast_port": 5355,
+            "listen_port": 12308,
+            "target_port": 12307,
+            "json_message": true,
+            "json_response": true,
+            "message": {
+                "command": "broadcast"
+            },
+            "IP_field": "ip",
+            "SNR_field": "iserial",
+            "VID_field": "vid",
+            "PID_field": "pid"
+        },
+        "operational_timeout": 60,
+        "min_coords_corner": "LF",
+        "x": "190",
+        "y": "190",
+        "z": "196",
+        "filament_diameter": "1.75",
+        "offset_x": "126",
+        "offset_y": "99.5",
+        "keep_warm_gcode": "M104 T0 S$left_tool_temp\nM140 S$platform_temp\n",
+        "gcodecheck_re_file": "marlin-marlin.txt"
+    },
+    {
+        "name": "MakerBot Method X",
+        "alias": "MBMethodX",
+        "sender": "mb_method_sender",
+        "extruder_count": 2,
+        "vids_pids": [
+            [
+                "23C1",
+                "000F"
+            ]
+        ],
+        "network_detect": {
+            "broadcast_port": 5355,
+            "listen_port": 12308,
+            "target_port": 12307,
+            "json_message": true,
+            "json_response": true,
+            "message": {
+                "command": "broadcast"
+            },
+            "IP_field": "ip",
+            "SNR_field": "iserial",
+            "VID_field": "vid",
+            "PID_field": "pid"
+        },
+        "operational_timeout": 60,
+        "min_coords_corner": "LF",
+        "x": "190",
+        "y": "190",
+        "z": "196",
+        "filament_diameter": "1.75",
+        "offset_x": "126",
+        "offset_y": "99.5",
+        "keep_warm_gcode": "M104 T0 S$left_tool_temp\nM140 S$platform_temp\n",
+        "gcodecheck_re_file": "marlin-marlin.txt"
+    },
+    {
+        "alias": "KOSSEL_XL",
+        "baudrate": [
+            250000
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LN",
+        "name": "Kossel XL (Experimental)",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "2341",
+                "0042"
+            ],
+            [
+                "03EB",
+                "204B"
+            ]
+        ]
+    },
+    {
+        "alias": "FF_FINDER",
+        "crazy_serial_number": true,
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "RF",
+        "name": "FlashForge Finder",
+        "offset_toolpath": true,
+        "sender": "ffd_sender",
+        "vids_pids": [
+            [
+                "2B71",
+                "0002"
+            ],
+            [
+                "2B71",
+                "0007"
+            ]
+        ]
+    },
+    {
+        "alias": "U3",
+        "allow_comments": true,
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 2,
+        "min_coords_corner": "LF",
+        "name": "Ultimaker 3",
+        "sender": "u3_sender",
+        "vids_pids": [
+            [
+                "ZZZZ",
+                "00U3"
+            ]
+        ]
+    },
+    {
+        "alias": "ANET_A8_I3",
+        "baudrate": [
+            115200,
+            250000
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "Anet A8 Desktop Prusa i3 - Experimental",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "1A86",
+                "7523"
+            ]
+        ]
+    },
+    {
+        "alias": "MPRICE_SELECT_V2",
+        "baudrate": [
+            115200,
+            250000
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "Monoprice Maker Select v2 - Experimental",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "0403",
+                "6001"
+            ]
+        ]
+    },
+    {
+        "alias": "MPRICE_SELECT_ULT",
+        "baudrate": [
+            115200,
+            250000
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "Monoprice Maker Ultimate - Experimental",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "2341",
+                "0010"
+            ]
+        ]
+    },
+    {
+        "alias": "DK300",
+        "baudrate": [
+            115200,
+            250000
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "G1 Y140 F4800",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "DK-300 - Experimental",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "0403",
+                "6001"
+            ]
+        ]
+    },
+    {
+        "alias": "DK200",
+        "baudrate": [
+            115200,
+            250000
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "G1 Y140 F4800",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "DK-200 - Experimental",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "0403",
+                "6001"
+            ]
+        ]
+    },
+    {
+        "alias": "D3",
+        "name": "Duplicator 3",
+        "sender": "printrun_sender",
+        "vids_pids": []
+    },
+    {
+        "alias": "AE3D_IM_WIDE",
+        "baudrate": [
+            250000,
+            115200
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "AE3D Impressora Wide",
+        "no_DTR": true,
+        "sender": "smoothie_serial_sender",
+        "vids_pids": [
+            [
+                "1D50",
+                "6015"
+            ]
+        ]
+    },
+    {
+        "alias": "FF_CREATOR_PRO",
+        "baudrate": [
+            115200
+        ],
+        "crazy_serial_number": true,
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 2,
+        "min_coords_corner": "RF",
+        "name": "FlashForge Creator Pro",
+        "offset_toolpath": true,
+        "sender": "ffd_sender",
+        "vids_pids": [
+            [
+                "23C1",
+                "D314"
+            ]
+        ]
+    },
+    {
+        "alias": "ATTROBOT_M",
+        "baudrate": [
+            115200,
+            250000
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "Attrobot Mini - Experimental",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "0403",
+                "6001"
+            ],
+            [
+                "16C0",
+                "0483"
+            ],
+            [
+                "2341",
+                "0042"
+            ],
+            [
+                "03EB",
+                "204B"
+            ],
+            [
+                "27B1",
+                "0001"
+            ],
+            [
+                "1A86",
+                "7523"
+            ],
+            [
+                "2341",
+                "003E"
+            ],
+            [
+                "0403",
+                "6015"
+            ]
+        ]
+    },
+    {
+        "alias": "DREMEL3D45",
+        "crazy_serial_number": true,
+        "end_gcodes": [
+            "M107",
+            "M104 S0 T0",
+            "G28 X0 Y0",
+            "M132 X Y Z A",
+            "G91",
+            "M18"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "RF",
+        "name": "Dremel 3D45 Idea Builder",
+        "offset_toolpath": true,
+        "sender": "dremel_sender",
+        "vids_pids": [
+            [
+                "2A89",
+                "888D"
+            ]
+        ]
+    },
+    {
+        "alias": "PrintrBotSM",
+        "baudrate": [
+            250000,
+            115200
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "PrintrBot Simple Metal",
+        "no_DTR": true,
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "2974",
+                "0503"
+            ],
+            [
+                "16C0",
+                "0483"
+            ],
+            [
+                "2974",
+                "0610"
+            ]
+        ]
+    },
+    {
+        "alias": "PRUSA_I3_MK2",
+        "baudrate": [
+            115200,
+            250000
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "Prusa i3 MK2 - Experimental",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "2C99",
+                "0001"
+            ],
+            [
+                "27B1",
+                "0001"
+            ],
+            [
+                "UART",
+                "0PIN"
+            ]
+        ]
+    },
+    {
+        "alias": "DEXBOT",
+        "baudrate": [
+            250000
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "3Dexter Dexbot - Experimental",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "2341",
+                "0042"
+            ]
+        ]
+    },
+    {
+        "alias": "FF_GUIDER2",
+        "crazy_serial_number": true,
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "file_endpoint_out": "0x4",
+        "min_coords_corner": "RF",
+        "name": "FlashForge Guider 2",
+        "offset_toolpath": true,
+        "sender": "ffd_sender",
+        "vids_pids": [
+            [
+                "2B71",
+                "0004"
+            ]
+        ]
+    },
+    {
+        "alias": "FF_INVENTOR2",
+        "crazy_serial_number": true,
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "file_endpoint_out": "0x4",
+        "min_coords_corner": "RF",
+        "name": "FlashForge Inventor 2",
+        "offset_toolpath": true,
+        "sender": "ffd_sender",
+        "vids_pids": [
+            [
+                "2B71",
+                "0006"
+            ]
+        ]
+    },
+    {
+        "alias": "FF_GUIDER",
+        "crazy_serial_number": true,
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "RF",
+        "name": "FlashForge Guider",
+        "offset_toolpath": true,
+        "sender": "ffd_sender",
+        "vids_pids": [
+            [
+                "2B71",
+                "0003"
+            ]
+        ]
+    },
+    {
+        "alias": "C_CR10",
+        "baudrate": [
+            115200,
+            250000
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "Creality CR-10(S) - Experimental",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "0403",
+                "6001"
+            ],
+            [
+                "1A86",
+                "7523"
+            ]
+        ]
+    },
+    {
+        "alias": "PRUSA_I3_MK3",
+        "baudrate": [
+            115200,
+            250000
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "Prusa i3 MK3 - Experimental",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "2C99",
+                "0002"
+            ],
+            [
+                "UART",
+                "0PIN"
+            ]
+        ]
+    },
+    {
+        "alias": "PS_ULTRA",
+        "crazy_serial_number": true,
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 2,
+        "min_coords_corner": "RF",
+        "name": "PowerSpec Ultra",
+        "offset_toolpath": true,
+        "sender": "ffd_sender",
+        "vids_pids": [
+            [
+                "2B71",
+                "00FF"
+            ]
+        ]
+    },
+    {
+        "alias": "MB5thReplicator",
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "MakerBot 5th Replicator",
+        "network_detect": {
+            "scanner": "broadcast",
+            "IP_field": "ip",
+            "PID_field": "pid",
+            "SNR_field": "iserial",
+            "VID_field": "vid",
+            "broadcast_port": 12309,
+            "json_message": true,
+            "json_response": true,
+            "listen_port": 12308,
+            "message": {
+                "command": "broadcast"
+            },
+            "target_port": 12307
+        },
+        "operational_timeout": 60,
+        "sender": "birdwing_sender",
+        "vids_pids": [
+            [
+                "23C1",
+                "0005"
+            ],
+            [
+                "23C1",
+                "000B"
+            ],
+            [
+                "XXXX",
+                "XXXX"
+            ]
+        ]
+    },
+    {
+        "alias": "3DP_P1",
+        "baudrate": [
+            250000,
+            115200
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "3DPrinter Prime 1",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "2341",
+                "0042"
+            ],
+            [
+                "1A86",
+                "7523"
+            ]
+        ]
+    },
+    {
+        "alias": "SM_3IN1",
+        "baudrate": [
+            115200,
+            250000
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "Snapmaker 3-in-1",
+        "sender": "printrun_sender",
+        "vids_pids": [
+            [
+                "1A86",
+                "7523"
+            ]
+        ]
+    }, 
+    {
+        "name": "Generic Duet3D",
+        "alias": "DUET3D",
+        "sender": "threaded_sender",
+        "extruder_count": 1,
+        "baudrate": [
+            115200
+        ],
+        "vids_pids": [
+            [
+                "1D50",
+                "60EC"
+            ]
+        ],
+        "end_gcodes": [
+            "G1 X0 Y0",
+            "M107",
+            "G91",
+            "M83",
+            "T0",
+            "G1 E-1",
+            "M104 T0 S0",
+            "G90",
+            "M140 S0",
+            "M84 S10"
+        ],
+        "min_coords_corner": "LF",
+        "x": "200",
+        "y": "200",
+        "z": "200",
+        "filament_diameter": "1.75",
+        "offset_x": "0",
+        "offset_y": "0",
+        "keep_warm_gcode": "M104 T0 S$left_tool_temp\nM140 S$platform_temp",
+        "gcodecheck_re_file": "marlin-marlin.txt"
+    },
+    {
+        "name": "Generic Smoothieware",
+        "alias": "SMOTHIEWARE",
+        "sender": "threaded_sender",
+        "extruder_count": 2,
+        "vids_pids": [
+            [
+                "1D50",
+                "6015"
+            ]
+        ],
+        "baudrate": [
+            250000,
+            115200
+        ],
+        "crazy_serial_number": false,
+        "no_DTR": true,
+        "end_gcodes": [
+            "M104 T0 S0",
+            "M104 T1 S0",
+            "M140 S0",
+            "M107",
+            "G28 X0 Y0",
+            "M18"
+        ],
+        "min_coords_corner": "RF",
+        "x": "200",
+        "y": "200",
+        "z": "200",
+        "filament_diameter": "1.75",
+        "offset_x": "0",
+        "offset_y": "200",
+        "nozzle_offset_y": 0,
+        "keep_warm_gcode": "M104 T0 S$left_tool_temp\nM140 S$platform_temp",
+        "gcodecheck_re_file": "marlin-marlin.txt"
+    },
+    {
+        "name": "Hercules Industrial",
+        "alias": "HERCULES_INDUSTRIAL",
+        "sender": "threaded_sender",
+        "extruder_count": 1,
+        "vids_pids": [
+            [
+                "1D50",
+                "6015"
+            ]
+        ],
+        "baudrate": [
+            250000
+        ],
+        "crazy_serial_number": false,
+        "no_DTR": true,
+        "end_gcodes": [
+            "M104 T0 S0",
+            "M104 T1 S0",
+            "M140 S0",
+            "M107",
+            "G28 X0 Y0",
+            "M18"
+        ],
+        "min_coords_corner": "LF",
+        "x": "300",
+        "y": "300",
+        "z": "300",
+        "filament_diameter": "1.75",
+        "offset_x": "0",
+        "offset_y": "300",
+        "keep_warm_gcode": "M104 T0 S$left_tool_temp\nM140 S$platform_temp",
+        "gcodecheck_re_file": "marlin-marlin.txt"
+    }, 
+    {
+        "name": "Fusion3 F400",
+        "alias": "FUSION3_F400",
+        "sender": "telnet_sender",
+        "extruder_count": 1,
+        "vids_pids": [
+            [
+                "FUS3",
+                "F400"
+            ]
+        ],
+        "network_detect": {
+            "scanner": "rrfw"
+        },
+        "end_gcodes": [
+        ],
+        "min_coords_corner": "LF",
+        "x": "355",
+        "y": "355",
+        "z": "315",
+        "filament_diameter": "1.75",
+        "keep_warm_gcode": "M104 T0 S$left_tool_temp\nM140 S$platform_temp",
+        "gcodecheck_re_file": "marlin-marlin.txt",
+        "operational_timeout": 30
+
+    },
+    {
+        "name": "Fusion3 F410",
+        "alias": "FUSION3_F410",
+        "sender": "telnet_sender",
+        "extruder_count": 1,
+        "vids_pids": [
+            [
+                "FUS3",
+                "F410"
+            ]
+        ],
+        "network_detect": {
+            "scanner": "rrfw"
+        },
+        "end_gcodes": [
+        ],
+        "min_coords_corner": "LF",
+        "x": "355",
+        "y": "355",
+        "z": "315",
+        "filament_diameter": "1.75",
+        "keep_warm_gcode": "M104 T0 S$left_tool_temp\nM140 S$platform_temp",
+        "gcodecheck_re_file": "marlin-marlin.txt",
+        "operational_timeout": 30
+
+    },
+    {
+        "name": "Generic RepRapFirmware by telnet",
+        "alias": "TELNET_RRFW",
+        "sender": "telnet_sender",
+        "extruder_count": 1,
+        "vids_pids": [
+            [
+                "RRFW",
+                "GENT"
+            ]
+        ],
+        "network_detect": {
+            "scanner": "rrfw"
+        },
+        "end_gcodes": [
+        ],
+        "min_coords_corner": "LF",
+        "x": "200",
+        "y": "200",
+        "z": "200",
+        "filament_diameter": "1.75",
+        "keep_warm_gcode": "M104 T0 S$left_tool_temp\nM140 S$platform_temp",
+        "gcodecheck_re_file": "marlin-marlin.txt",
+        "operational_timeout": 30
+    },
+    {
+        "name": "Generic RepetierServer printer",
+        "alias": "REPETIER_SERVER",
+        "sender": "repetier_server_sender",
+        "extruder_count": 1,
+        "vids_pids": [
+            [
+                "REPE",
+                "SERV"
+            ]
+        ],
+        "network_detect": {
+            "scanner": "repetier"
+        },
+        "end_gcodes": [
+        ],
+        "min_coords_corner": "LF",
+        "x": "200",
+        "y": "200",
+        "z": "200",
+        "filament_diameter": "1.75",
+        "keep_warm_gcode": "M104 T0 S$left_tool_temp\nM140 S$platform_temp",
+        "gcodecheck_re_file": "marlin-marlin.txt",
+        "operational_timeout": 8
+    },
+    {
+        "name": "GTMax3D Core AB400",
+        "alias": "GTMAX_AB400",
+        "sender": "repetier_server_sender",
+        "extruder_count": 1,
+        "vids_pids": [
+            [
+                "REPE",
+                "SERV"
+            ]
+        ],
+        "network_detect": {
+            "scanner": "repetier"
+        },
+        "end_gcodes": [
+        ],
+        "min_coords_corner": "LF",
+        "x": "400",
+        "y": "400",
+        "z": "400",
+        "filament_diameter": "1.75",
+        "keep_warm_gcode": "M104 T0 S$left_tool_temp\nM140 S$platform_temp",
+        "gcodecheck_re_file": "marlin-marlin.txt",
+        "operational_timeout": 8
+    },
+    {
+        "name": "GTMax3D Core A3",
+        "alias": "GTMAX_A3",
+        "sender": "repetier_server_sender",
+        "extruder_count": 1,
+        "vids_pids": [
+            [
+                "REPE",
+                "SERV"
+            ]
+        ],
+        "network_detect": {
+            "scanner": "repetier"
+        },
+        "end_gcodes": [
+        ],
+        "min_coords_corner": "LF",
+        "x": "300",
+        "y": "300",
+        "z": "300",
+        "filament_diameter": "1.75",
+        "keep_warm_gcode": "M104 T0 S$left_tool_temp\nM140 S$platform_temp",
+        "gcodecheck_re_file": "marlin-marlin.txt",
+        "operational_timeout": 8
+    },
+    {
+        "name": "GTMax3D H5",
+        "alias": "GTMAX_H5",
+        "sender": "repetier_server_sender",
+        "extruder_count": 1,
+        "vids_pids": [
+            [
+                "REPE",
+                "SERV"
+            ]
+        ],
+        "network_detect": {
+            "scanner": "repetier"
+        },
+        "end_gcodes": [
+        ],
+        "min_coords_corner": "LF",
+        "x": "300",
+        "y": "300",
+        "z": "500",
+        "filament_diameter": "1.75",
+        "keep_warm_gcode": "M104 T0 S$left_tool_temp\nM140 S$platform_temp",
+        "gcodecheck_re_file": "marlin-marlin.txt",
+        "operational_timeout": 8
+    },
+    {
+        "name": "Formlabs Form 2 (Beta)",
+        "alias": "FL_FORM2",
+        "sender": "formlabs_sender",
+        "extruder_count": 1,
+        "vids_pids": [
+            [
+                "FORM",
+                "FRM2"
+            ]
+        ],
+        "network_detect": {
+            "scanner": "zeroconf_formlabs",
+            "filter": "_formlabs_formule._tcp",
+            "port": 35
+        },
+        "min_coords_corner": "LF",
+        "x": "145.0",
+        "y": "145.0",
+        "z": "175.0",
+        "keep_warm_gcode": "",
+        "gcodecheck_re_file": "marlin-marlin.txt"
+    },
+    {
+        "name": "Formlabs Form 3 (Beta)",
+        "alias": "FL_FORM3",
+        "sender": "formlabs_sender",
+        "extruder_count": 1,
+        "vids_pids": [
+            [
+                "FORM",
+                "FRM3"
+            ]
+        ],
+        "network_detect": {
+            "scanner": "zeroconf_formlabs",
+            "filter": "_formlabs_formule._tcp",
+            "port": 35
+        },
+        "min_coords_corner": "LF",
+        "x": "145.0",
+        "y": "145.0",
+        "z": "185.0",
+        "keep_warm_gcode": "",
+        "gcodecheck_re_file": "marlin-marlin.txt"
+    },
+    {
+        "name": "Formlabs Form 3B/3B+ (Beta)",
+        "alias": "FL_FRM3B",
+        "sender": "formlabs_sender",
+        "extruder_count": 1,
+        "vids_pids": [
+            [
+                "FORM",
+                "FRMB"
+            ]
+        ],
+        "network_detect": {
+            "scanner": "zeroconf_formlabs",
+            "filter": "_formlabs_formule._tcp",
+            "port": 35
+        },
+        "min_coords_corner": "LF",
+        "x": "145.0",
+        "y": "145.0",
+        "z": "185.0",
+        "keep_warm_gcode": "",
+        "gcodecheck_re_file": "marlin-marlin.txt"
+    },
+    {
+        "name": "Formlabs Form 3L (Beta)",
+        "alias": "FL_FRM3L",
+        "sender": "formlabs_sender",
+        "extruder_count": 1,
+        "vids_pids": [
+            [
+                "FORM",
+                "FRML"
+            ]
+        ],
+        "network_detect": {
+            "scanner": "zeroconf_formlabs",
+            "filter": "_formlabs_formule._tcp",
+            "port": 35
+        },
+        "min_coords_corner": "LF",
+        "x": "335.0",
+        "y": "200.0",
+        "z": "300.0",
+        "keep_warm_gcode": "",
+        "gcodecheck_re_file": "marlin-marlin.txt"
+    },
+    {
+        "name": "Formlabs Form 3BL (Beta)",
+        "alias": "FL_FRM3BL",
+        "sender": "formlabs_sender",
+        "extruder_count": 1,
+        "vids_pids": [
+            [
+                "FORM",
+                "FRBL"
+            ]
+        ],
+        "network_detect": {
+            "scanner": "zeroconf_formlabs",
+            "filter": "_formlabs_formule._tcp",
+            "port": 35
+        },
+        "min_coords_corner": "LF",
+        "x": "335.0",
+        "y": "200.0",
+        "z": "300.0",
+        "keep_warm_gcode": "",
+        "gcodecheck_re_file": "marlin-marlin.txt"
+    },
+    {
+        "name": "Formlabs Fuse 1 (Beta)",
+        "alias": "FL_FUSE1",
+        "sender": "formlabs_sender",
+        "extruder_count": 1,
+        "vids_pids": [
+            [
+                "FORM",
+                "FUS1"
+            ]
+        ],
+        "network_detect": {
+            "scanner": "zeroconf_formlabs",
+            "filter": "_formlabs_formule._tcp",
+            "port": 35
+        },
+        "min_coords_corner": "LF",
+        "x": "165.0",
+        "y": "165.0",
+        "z": "300.0",
+        "keep_warm_gcode": "",
+        "gcodecheck_re_file": "marlin-marlin.txt"
+    },
+    {
+        "name": "Formlabs Fuse 1+ (Beta)",
+        "alias": "FL_FUSE1P",
+        "sender": "formlabs_sender",
+        "extruder_count": 1,
+        "vids_pids": [
+            [
+                "FORM",
+                "FU1P"
+            ]
+        ],
+        "network_detect": {
+            "scanner": "zeroconf_formlabs",
+            "filter": "_formlabs_formule._tcp",
+            "port": 35
+        },
+        "min_coords_corner": "LF",
+        "x": "165.0",
+        "y": "165.0",
+        "z": "300.0",
+        "keep_warm_gcode": "",
+        "gcodecheck_re_file": "marlin-marlin.txt"
+    },
+    { 
+        "name": "Generic Klipper",
+        "alias": "KLIPPER",
+        "sender": "threaded_sender",
+        "extruder_count": 1,
+        "baudrate": [
+            115200,
+            250000
+        ],
+        "vids_pids": [
+            [
+                "KLPR",
+                "KLPR"
+            ]
+        ],
+        "end_gcodes": [
+        ],
+        "min_coords_corner": "LF",
+        "x": "300",
+        "y": "300",
+        "z": "500",
+        "filament_diameter": "1.75",
+        "keep_warm_gcode": "M104 T0 S$left_tool_temp\nM140 S$platform_temp",
+        "gcodecheck_re_file": "marlin-marlin.txt",
+        "operational_timeout": 6
+    },
+    {
+        "alias": "PRUSA_MINI",
+        "baudrate": [
+            115200
+        ],
+        "end_gcodes": [
+            "M104 S0",
+            "M140 S0",
+            "G28 X0 Y0",
+            "M84"
+        ],
+        "extruder_count": 1,
+        "min_coords_corner": "LF",
+        "name": "Prusa MINI",
+        "sender": "threaded_sender",
+        "vids_pids": [
+            [
+                "2C99",
+                "0409"
+            ],
+            [
+                "2C99",
+                "000C"
+            ],
+            [
+                "UART",
+                "0PIN"
+            ]
+        ]
+    },
+    {
+        "name": "Bambu Lab P1P",
+        "alias": "BAMBU_P1P",
+        "sender": "bambulab_sender",
+        "extruder_count": 1,
+        "network_detect": {
+            "scanner" : "noscanner",
+            "required_fields": ["forced_SNR", "password"]
+        },
+        "vids_pids": [
+            [
+                "BMBL",
+                "0P1P"
+            ]
+        ],
+        "x": "256",
+        "y": "256",
+        "z": "256",
+        "filament_diameter": "1.75",
+        "keep_warm_gcode": "",
+        "gcodecheck_re_file": "marlin-marlin.txt",
+        "min_coords_corner": "LF"
+    },
+    {
+        "name": "Bambu Lab X1",
+        "alias": "BAMBU_X1",
+        "sender": "bambulab_sender",
+        "extruder_count": 1,
+        "network_detect": {
+            "scanner" : "noscanner",
+            "required_fields": ["forced_SNR", "password"]
+        },
+        "vids_pids": [
+            [
+                "BMBL",
+                "00X1"
+            ]
+        ],
+        "min_coords_corner": "LF",
+        "x": "256",
+        "y": "256",
+        "z": "256",
+        "filament_diameter": "1.75",
+        "keep_warm_gcode": "",
+        "gcodecheck_re_file": "marlin-marlin.txt"
+    },
+    {
+        "name": "Bambu Lab X1 Carbon",
+        "alias": "BAMBU_X1C",
+        "sender": "bambulab_sender",
+        "extruder_count": 1,
+        "network_detect": {
+            "scanner" : "noscanner",
+            "required_fields": ["forced_SNR", "password"]
+        },
+        "vids_pids": [
+            [
+                "BMBL",
+                "0X1C"
+            ]
+        ],
+        "min_coords_corner": "LF",
+        "x": "256",
+        "y": "256",
+        "z": "256",
+        "filament_diameter": "1.75",
+        "keep_warm_gcode": "",
+        "gcodecheck_re_file": "marlin-marlin.txt"
+    },
+    {
+        "alias": "RR2",
+        "name": "Robo3D R2",
+        "sender": "octoprint_sender",
+        "vids_pids": [
+            [
+                "OCTO",
+                "0RR2"
+            ]
+        ]
+    },
+    {
+        "alias": "RC2",
+        "name": "Robo3D C2",
+        "sender": "octoprint_sender",
+        "vids_pids": [
+            [
+                "OCTO",
+                "0RC2"
+            ]
+        ]
+    },
+    {
+        "alias": "MGM3",
+        "name": "MakerGear M3-ID",
+        "sender": "octoprint_sender",
+        "vids_pids": [
+            [
+                "OCTO",
+                "MGM3"
+            ]
+        ]
+    },
+    {
+        "alias": "TLDQ2",
+        "name": "TRILAB DeltiQ 2",
+        "sender": "octoprint_sender",
+        "vids_pids": [
+            [
+                "OCTO",
+                "0TD2"
+            ]
+        ]
+    }
+]

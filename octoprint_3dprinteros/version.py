@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # Copyright 3D Control Systems, Inc. All Rights Reserved 2017-2019.
 # Built in San Francisco.
 
@@ -10,24 +11,14 @@
 # (available at https://www.3dprinteros.com/terms-and-conditions/),
 # and privacy policy (available at https://www.3dprinteros.com/privacy-policy/)
 
-import platform
+version = "7.18.12"
+branch = "master"
+build = "git"
 
+def full_version_string():
+    return version + branch + "_" + build 
 
-def get_platform():
-    platform_name = platform.system().lower()
-    platform_details = platform.platform()
-    if platform_name.startswith('linux') and ('arm' in platform_details or 'aarch64' in platform_details):
-        return 'rpi'
-    elif platform_name.startswith('linux'):
-        return 'linux'
-    elif platform_name.startswith('darwin') or platform_name.startswith('macos'):
-        return 'mac'
-    elif platform_name.startswith('windows'):
-        return 'win'
-
-
-PLATFORM = get_platform()
-
-
-if __name__ == "__main__":
-    print(PLATFORM)
+if __name__ == '__main__':
+    print(version)
+    print(branch)
+    print(build)

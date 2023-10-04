@@ -10,24 +10,20 @@
 # (available at https://www.3dprinteros.com/terms-and-conditions/),
 # and privacy policy (available at https://www.3dprinteros.com/privacy-policy/)
 
-import platform
+import string
+import os
 
-
-def get_platform():
-    platform_name = platform.system().lower()
-    platform_details = platform.platform()
-    if platform_name.startswith('linux') and ('arm' in platform_details or 'aarch64' in platform_details):
-        return 'rpi'
-    elif platform_name.startswith('linux'):
-        return 'linux'
-    elif platform_name.startswith('darwin') or platform_name.startswith('macos'):
-        return 'mac'
-    elif platform_name.startswith('windows'):
-        return 'win'
-
-
-PLATFORM = get_platform()
-
-
-if __name__ == "__main__":
-    print(PLATFORM)
+def get_filename_ascii(filename, exclude_chars=''):
+    filename = os.path.splitext(os.path.basename(filename))[0]
+    output = ''
+    available_chars = string.ascii_letters + string.digits + '!"#$%&\'()*+,-.:;<=>?@[]^_`{|}~'
+    for c in exclude_chars:
+        available_chars = available_chars.replace(c, '')
+    for c in filename:
+        if c in available_chars:
+            output += c
+        elif c in '\\/':
+            output += '|'
+        else:
+            output += '_'
+    return output
