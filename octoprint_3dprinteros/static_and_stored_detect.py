@@ -15,6 +15,15 @@ class StaticDetector(BaseDetector):
     DEFAULT_SNR = ''
 
     @staticmethod
+    def is_same_printer(checking_dict, checked_dict): #TODO rename args in all other classes
+        for key in StaticDetector.PRINTER_ID_DICT_KEYS:
+            checking_value = checking_dict.get(key)
+            checked_value = checked_dict.get(key)
+            if checking_value and checking_value != checked_value:
+                return False
+        return True
+
+    @staticmethod
     def prepare_and_filter(printer_list):
         enabled_printers = []
         for printer in printer_list:
@@ -56,7 +65,7 @@ class StaticDetector(BaseDetector):
         settings[section_name] = self.printers_from_config
         config.Config.instance().save_settings(settings)
 
-    def add_printer(self, printer, to_config=False):
+    def add_printer(self, printer, to_config=False, save=True):
         with self.lock:
             if to_config:
                 printers_list = self.printers_from_config 
@@ -64,7 +73,17 @@ class StaticDetector(BaseDetector):
                 printers_list = self.printers_from_file 
             if printer not in printers_list:
                 self.logger.info(f'Adding printer: {printer}')
-                printers_list.append(printer)
+                for existings_printer in printers_list:
+                    if self.is_same_printer(printer, existings_printer):
+                        existings_printer.update(printer)
+                        break
+                else:
+                    printers_list.append(printer)
+            if save:
+                if to_config:
+                    self.save_to_config()
+                else:
+                    self.save_to_file()
 
     def load_from_file(self, filepath=None):
         with self.lock:
@@ -95,6 +114,7 @@ class StaticDetector(BaseDetector):
                 self.logger.exception('Exception on save of stored printers from: ' + str(filepath))
             return False
 
+
     def get_printers_list(self):
         with self.lock:
             self.logger.debug(f'Static printers: {self.printers_from_config}')
@@ -109,15 +129,22 @@ class StaticDetector(BaseDetector):
     #         del printer["enabled"]
     #     return printer_without_enabled
 
-    def remove_printer(self, printer):
+    def remove_printer(self, printer, allow_remove_from_config=False):
         with self.lock:
-            for stored_printer in self.printers_from_config:
-                if printer['PID'] == stored_printer['PID'] and printer['PID'] == stored_printer['PID']:
-                    self.printers_from_config.remove(stored_printer)
-            else:
-                for stored_printer in self.printers_from_file:
-                    if printer['PID'] == stored_printer['PID'] and printer['PID'] == stored_printer['PID']:
+            for stored_printer in self.printers_from_file:
+                if printer.get('SNR') == stored_printer.get('SNR'):
+                    if printer['PID'] == stored_printer['PID'] and printer['VID'] == stored_printer['VID']:
                         self.printers_from_file.remove(stored_printer)
+                        self.save_to_file(self.printers_from_file)
+                        return True
+            if allow_remove_from_config:
+                for stored_printer in self.printers_from_config:
+                    if printer['PID'] == stored_printer['PID'] and printer['VID'] == stored_printer['VID']:
+                        if printer.get('SNR') == stored_printer.get('SNR'):
+                            self.printers_from_config.remove(stored_printer)
+                            self.save_to_config(self.printers_from_config)
+                            return True
+        return False
 
     def remove_all(self, save=False):
         with self.lock:
@@ -127,6 +154,24 @@ class StaticDetector(BaseDetector):
             self.printers_from_file.clear()
             if save:
                 self.save_to_file()
+
+    def edit_printer(self, printer, allow_edit_in_config=False):
+        with self.lock:
+            for stored_printer in self.printers_from_file:
+                if printer.get('SNR') == stored_printer.get('SNR'):
+                    if printer['PID'] == stored_printer['PID'] and printer['VID'] == stored_printer['VID']:
+                        stored_printer.update(printer)
+                        self.save_to_file(self.printers_from_file)
+                        return True
+            if allow_edit_in_config:
+                for stored_printer in self.printers_from_config:
+                    if printer['PID'] == stored_printer['PID'] and printer['VID'] == stored_printer['VID']:
+                        if printer.get('SNR') == stored_printer.get('SNR'):
+                            stored_printer.update(printer)
+                            self.save_to_config(self.printers_from_config)
+                            return True
+        return False
+
 
 if __name__ == "__main__":
     print(StaticDetector(None).get_printers_list())

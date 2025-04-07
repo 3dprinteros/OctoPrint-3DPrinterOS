@@ -25,29 +25,23 @@ import camera_controller
 import config
 
 
-def remove_non_existed_modules(camera_modules_dict):
-    working_dir = os.path.dirname(os.path.abspath(__file__))
-    verified_camera_modules = {}
-    for camera_name,module in camera_modules_dict.items():
-        if not module or os.path.exists(os.path.join(working_dir, module)):
-            verified_camera_modules[camera_name] = module
-    return verified_camera_modules
-
-
 class NoSubprocCameraController(camera_controller.CameraController):
+
+    RUN_FORMAT_NAME = "thread"
 
     def __init__(self, app):
         self.app = app
+        self.call_lock = threading.RLock()
+        self.remove_abscent_cameras()
         self.logger = logging.getLogger(__name__)
         self.mac = app.host_id
         self.current_camera_name = self.DISABLE_CAMERA_NAME
         self.camera_check_and_restart_thread = None
-        self.camera_class = None
+        self.camera_obj = None
         self.camera_thread = None
         self.thread_stop_handle = [False]
         self.enabled = config.get_settings()["camera"]["enabled"]
         self.token = ""
-        self.start_camera_process()
 
     def check_camera_and_restart_on_error(self):
         try:
@@ -55,7 +49,7 @@ class NoSubprocCameraController(camera_controller.CameraController):
         except (AttributeError, RuntimeError):
             return False
 
-    def run_camera(self, module_name, camera_name, _):
+    def run_camera(self, module_name, camera_name, token):
         if not module_name.endswith(".py"):
             self.logger.error(f'Camera {module_name} can only run as subprocess')
         else:
@@ -67,8 +61,10 @@ class NoSubprocCameraController(camera_controller.CameraController):
                 self.logger.warning('Could not found camera module: ' + module_name)
             else:
                 try:
-                    self.camera_class = camera_module.Camera(autostart=False)
-                    self.camera_thread = threading.Thread(target=self.camera_class.start)
+                    self.camera_obj = camera_module.Camera(autostart=False)
+                    if not self.camera_obj.token:
+                        self.camera_obj.init_token(token, self.mac)
+                    self.camera_thread = threading.Thread(target=self.camera_obj.start, daemon=True)
                     self.logger.warning('Starting camera thread for: ' + module_name)
                     self.camera_thread.start()
                 except Exception as e:
@@ -77,19 +73,15 @@ class NoSubprocCameraController(camera_controller.CameraController):
                     return self.camera_thread.is_alive()
         return False
 
-    def stop_camera_process(self):
+    def stop_camera_process(self, _=False):
         self.logger.info('Stopping camera thread...')
         try:
-            if self.camera_class:
-                self.camera_class.close()
-                self.camera_thread.join(3)
+            if self.camera_obj:
+                self.camera_obj.close()
+                self.camera_thread.join(self.camera_obj.JOIN_TIMEOUT)
         except AttributeError:
             pass
         self.logger.info('...camera thread stopped.')
         self.current_camera_name = "Disable camera"
-        self.camera_class = None
+        self.camera_obj = None
         self.camera_thread = None
-
-
-if __name__ == "__main__":
-    cc = NoSubprocCameraController(None)

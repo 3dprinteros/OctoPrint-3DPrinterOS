@@ -11,10 +11,18 @@
 # (available at https://www.3dprinteros.com/terms-and-conditions/),
 # and privacy policy (available at https://www.3dprinteros.com/privacy-policy/)
 
+import logging
 
 class BaseDetector:
 
     CONFLICTS = []
+
+    PRINTER_ID_DICT_KEYS = ('VID', 'PID', 'SNR')
+    PRINTER_NONID_KEYS = ('COM', 'IP', 'PORT', 'PRT', 'PASS', 'SSHP', 'OFF')
+    ALL_KEYS = PRINTER_NONID_KEYS + PRINTER_NONID_KEYS
+    HIDDEN_PASSWORD_MASK = "_password_hidden_"
+
+    CAN_DETECT_SNR = False
 
     @staticmethod
     def format_vid_or_pid(vid_or_pid): #cuts "0x", fill with zeroes if needed, doing case up
@@ -37,3 +45,13 @@ class BaseDetector:
             else: # No SNR, PRT or COM so we got only VID and PID which are the same
                 return True
         return False
+
+    def __init__(self, _=None):
+        self.logger = logging.getLogger(self.__class__.__name__)
+        self.devices_list = []
+
+    def get_printers_list(self):
+        return self.devices_list
+
+    def close(self):
+        pass

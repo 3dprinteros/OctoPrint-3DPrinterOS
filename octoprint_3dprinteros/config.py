@@ -15,13 +15,14 @@ import json
 import threading
 
 import paths
+import forced_settings
 
 REMOTE_IP = ""
 LOCAL_IP = "127.0.0.1"
 
 
 def get_settings():
-    return Config.instance().settings
+    return Config.instance().get_settings()
 
 
 def get_profiles():
@@ -82,9 +83,38 @@ class Config(Singleton):
 
     DEFAULT_SETTINGS_FILE = os.path.join(paths.APP_FOLDER, 'default_settings.json')
     USER_SETTINGS_FILE = os.path.join(paths.CURRENT_SETTINGS_FOLDER, 'user_settings.json')
+    FORCED_SETTINGS_FILE = os.path.join(paths.APP_FOLDER, 'forced_settings.json')
+    FORCED_USER_SETTINGS_FILE = os.path.join(paths.CURRENT_SETTINGS_FOLDER, 'forced_settings.json')
     DEFAULT_PRINTER_PROFILES_FILE = os.path.join(paths.APP_FOLDER, 'default_printer_profiles.json')
 
+    @staticmethod
+    def save_file(settings, path):
+        try:
+            with open(path, 'w') as settings_file:
+                json_config = json.dumps(settings, sort_keys = True, indent = 4, separators = (',', ': '))
+                settings_file.write(json_config)
+        except Exception as e:
+            print("Error writing config to %s: %s" % (path, str(e)))
+        else:
+            print("Settings are successfully updated")
+            return settings
+
+    @staticmethod
+    def load_file(path, warnings=True):
+        try:
+            if os.path.isfile(path):
+                with open(path) as settings_file:
+                    settings = json.load(settings_file)
+            else:
+                return {}
+        except Exception as e:
+            if warnings:
+                print("Error reading config from %s: %s" % (path, str(e)))
+        else:
+            return settings
+
     def __init__(self, patch={}):
+        # NOTE: The Config object should be created before a first logger, so it shouldn't have a logger!
         self.settings = {}
         self.settings_lock = threading.RLock()
         self.patch = patch
@@ -93,53 +123,61 @@ class Config(Singleton):
         self.last_exception_text = ""
         self.app = None
 
-    def init_settings(self):
-        settings = self.load_settings(self.DEFAULT_SETTINGS_FILE)
-        user_settings = self.load_settings(self.USER_SETTINGS_FILE, warnings = False)
-        if user_settings:
-            settings = merge_dictionaries(user_settings, settings)
-        if settings != user_settings:
-            self.save_settings(settings, self.USER_SETTINGS_FILE)
-        self.settings = settings
-        self.settings.update(self.patch)
+    def get_settings(self):
+        with self.settings_lock:
+            return self.settings
 
-    def load_settings(self, settings_path=None, warnings=True):
-        if not settings_path:
-            settings_path=self.USER_SETTINGS_FILE
-        try:
-            with open(settings_path) as settings_file:
-                settings = json.load(settings_file)
-        except Exception as e:
-            if warnings:
-                print("Error reading config from %s: %s" % (settings_path, str(e)))
-        else:
+    def init_settings(self):
+        with self.settings_lock:
+            settings = self.load_settings(self.DEFAULT_SETTINGS_FILE)
+            user_settings = self.load_settings(self.USER_SETTINGS_FILE, warnings = False) #~/.3dprinteros/user_settings.json
+            forced_json_settings = self.load_settings(self.FORCED_SETTINGS_FILE, warnings = False) #3dprinteros-client/forced_settings.json
+            forced_user_settings = self.load_settings(self.FORCED_USER_SETTINGS_FILE, warnings = False) #~/.3dprinteros/forced_settings.json
+            forced_pymodule_settings = forced_settings.FORCED_SETTINGS #forced_settings.py:FORCED_SETTINGS
+            if user_settings:
+                settings = merge_dictionaries(user_settings, settings)
+            if forced_json_settings:
+                settings = merge_dictionaries(settings, forced_json_settings, overwrite=True)
+            if forced_user_settings:
+                settings = merge_dictionaries(settings, forced_user_settings, overwrite=True)
+            if forced_pymodule_settings:
+                settings = merge_dictionaries(settings, forced_pymodule_settings, overwrite=True)
+            if settings != user_settings:
+                self.save_settings(settings, self.USER_SETTINGS_FILE)
+            self.settings = settings
+            self.settings.update(self.patch)
+
+    def load_settings(self, path=None, warnings=True):
+        with self.settings_lock:
+            if not path:
+                path = self.USER_SETTINGS_FILE
+            settings = Config.load_file(path, warnings)
+            if settings:
+                self.settings = settings
             return settings
 
-    def save_settings(self, settings, settings_path=None):
-        if not settings_path:
-            settings_path=self.USER_SETTINGS_FILE
-        try:
-            with open(settings_path, 'w') as settings_file:
-                json_config = json.dumps(settings, sort_keys = True, indent = 4, separators = (',', ': '))
-                settings_file.write(json_config)
-        except Exception as e:
-            print("Error writing config to %s: %s" % (settings_path, str(e)))
-        else:
+    def save_settings(self, settings, path=None):
+        with self.settings_lock:
+            if not path:
+                path = self.USER_SETTINGS_FILE
+            if forced_settings.FORCED_SETTINGS: #forced_settings.py:FORCED_SETTINGS
+                settings = merge_dictionaries(settings, forced_settings.FORCED_SETTINGS, overwrite=True)
             self.settings = settings
-            print("Settings are successfully updated")
+            Config.save_file(settings, path)
 
     def update_settings(self, update_dict):
-        print("Settings update:", update_dict)
-        new_settings = merge_dictionaries(self.load_settings(), update_dict, overwrite = True)
-        self.save_settings(new_settings)
+        with self.settings_lock:
+            new_settings = merge_dictionaries(self.load_settings(), update_dict, overwrite = True)
+            self.save_settings(new_settings)
 
     def restore_default_settings(self):
-        if os.path.exists(self.USER_SETTINGS_FILE):
-            try:
-                os.remove(self.USER_SETTINGS_FILE)
-            except Exception as e:
-                return str(e)
-        self.settings = self.load_settings(self.DEFAULT_SETTINGS_FILE)
+        with self.settings_lock:
+            if os.path.exists(self.USER_SETTINGS_FILE):
+                try:
+                    os.remove(self.USER_SETTINGS_FILE)
+                except Exception as e:
+                    return str(e)
+            self.settings = self.load_settings(self.DEFAULT_SETTINGS_FILE)
 
     def set_profiles(self, profiles):
         self.profiles = profiles
@@ -164,7 +202,7 @@ class Config(Singleton):
                 profiles_file.write(json_profiles)
         except Exception as e:
             print("Error writing profiles: %s" % str(e))
-    
+
     def get_settings_as_text(self):
         return json.dumps(self.settings, sort_keys = True, indent = 4, separators = (',', ': '))
 

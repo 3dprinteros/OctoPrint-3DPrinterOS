@@ -25,13 +25,14 @@ APP_FOLDER = os.path.dirname(os.path.abspath(__file__))
 SETTINGS_NAME = '.3dprinteros'
 STORAGE_NAME = 'user_files'
 DOWNLOAD_NAME = 'downloads'
+PRINTER_SETTINGS_NAME = 'printer_settings'
 SIZE_UNITS = ['B', 'kB', 'MB', 'GB']
 SIZE_OUTPUT_TEMPLATE = "%.1f%s"
 FOLDER_TO_CLEANUP_ON_CRASH = ('simplejson', 'requests')
 
 
-def init_folder(name, parent_folder=None):
-    if not parent_folder: 
+def init_folder(name, parent_folder=None, only_get_path=False):
+    if not parent_folder:
         if sys.platform.startswith('win'):
             parent_folder = os.getenv('APPDATA')
             name = name.lstrip(".")
@@ -45,11 +46,31 @@ def init_folder(name, parent_folder=None):
     return path
 
 
-# Ability to force user settings(as well as other related user data stuff) folder path in default_settings.json
+# Set user settings(as well as other related user data stuff) folder path in default_settings.json or forced_settings.json or .3dprinteros/user_settings.json
+custom_dir = None
 with open(os.path.join(APP_FOLDER, "default_settings.json")) as f:
     settings = json.load(f)
     custom_dir = settings.get('custom_settings_home')
-
+try:
+    with open(os.path.join(APP_FOLDER, "forced_settings.json")) as f:
+        settings = json.load(f)
+        forced_settings_home = settings.get('custom_settings_home')
+        if forced_settings_home:
+            custom_dir = forced_settings_home
+except: #json could produce many kinds errors and there is no known reliable way to cover all of them
+    pass
+if not custom_dir:
+    default_settigns_folder = init_folder(SETTINGS_NAME, None, True)
+    if os.path.isdir(default_settigns_folder):
+        if os.path.isfile(os.path.join(default_settigns_folder, "user_settings.json")):
+            try:
+                with open(os.path.join(default_settigns_folder, "user_settings.json")) as f:
+                    settings = json.load(f)
+                    forced_settings_home = settings.get('custom_settings_home')
+                    if forced_settings_home:
+                        custom_dir = forced_settings_home
+            except:
+                pass
 
 CURRENT_SETTINGS_FOLDER = init_folder(SETTINGS_NAME, custom_dir)
 for folder in (STORAGE_NAME, DOWNLOAD_NAME):
@@ -60,6 +81,7 @@ UPDATE_FILE_PATH = os.path.join(CURRENT_SETTINGS_FOLDER, '3dprinteros_client_upd
 PLUGIN_INSTALL_FILE_PATH = os.path.join(CURRENT_SETTINGS_FOLDER, "plugin_to_install.zip")
 STORAGE_FOLDER = os.path.join(CURRENT_SETTINGS_FOLDER, STORAGE_NAME)
 DOWNLOAD_FOLDER = os.path.join(CURRENT_SETTINGS_FOLDER, DOWNLOAD_NAME)
+PRINTER_SETTINGS_FOLDER = os.path.join(CURRENT_SETTINGS_FOLDER, PRINTER_SETTINGS_NAME)
 AUDIO_FILES_FOLDER = os.path.join(APP_FOLDER, 'audio_files')
 OFFLINE_PRINTER_TYPE_FOLDER_PATH = os.path.join(CURRENT_SETTINGS_FOLDER, 'offline_printer_types')
 RELEASE_NOTES_FILE_PATH = os.path.join(APP_FOLDER, 'release_notes.txt')
@@ -71,6 +93,7 @@ CUSTOM_CACERT_PATH = os.path.join(CURRENT_SETTINGS_FOLDER, 'custom_ca.pem')
 CERTIFI_CACERT_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), 'certifi/cacert.pem'))
 ENABLE_UART_PATH = os.path.join(CURRENT_SETTINGS_FOLDER, "uart")
 DISABLE_UART_PATH = os.path.join(CURRENT_SETTINGS_FOLDER, "no-uart")
+GPG_KEY_FILE = os.path.join(APP_FOLDER, "os_update_gpg.key")
 
 def get_libusb_path(lib):
     if sys.platform.startswith('win'):
@@ -99,14 +122,16 @@ def check_and_create_dirs(path):
 
 def remove_folder_contents(top):
     for root, dirs, files in os.walk(top, topdown=False):
-        try:
-            for name in files:
+        for name in files:
+            try:
                 os.remove(os.path.join(root, name))
-            for name in dirs:
+            except:
+                print(f'Unable to remove {name} in {root}')
+        for name in dirs:
+            try:
                 os.rmdir(os.path.join(root, name))
-        except:
-            print(f'Unable to remove {name} in {root}')
-
+            except:
+                print(f'Unable to remove {name} in {root}')
 
 def remove_pyc_files():
     folders_to_remove = []
@@ -127,7 +152,7 @@ def remove_pyc_files():
 def get_storage_file_list():
     for filename in os.listdir(STORAGE_FOLDER):
         if os.path.isfile(os.path.join(STORAGE_FOLDER, filename)):
-            yield filename     
+            yield filename
 
 
 def get_free_space(path):
@@ -156,14 +181,18 @@ def get_human_free_space(path):
     return humanize_disk_size(get_free_space(path))
 
 
-def get_human_file_size(path):
+def get_file_size(path):
     try:
         size = os.path.getsize(path)
     except OSError:
         print("Error getting size for %s" % path)
         print(sys.exc_info())
         size = 0
-    return humanize_disk_size(size)
+    return size
+
+
+def get_human_file_size(path):
+    return humanize_disk_size(get_file_size(path))
 
 
 def get_human_access_time(path):
@@ -176,15 +205,15 @@ def get_human_access_time(path):
 
 def cleanup_caches():
     remove_pyc_files()
-    try:
-        import shutil
-        for folder in FOLDER_TO_CLEANUP_ON_CRASH:
-            folder_path = os.path.abspath(os.path.join(APP_FOLDER, folder))
-            if os.path.isdir(folder_path):
-                print(f'Removing leftovers in: {folder_path}')
-                shutil.rmtree(folder_path)
-    except (ImportError, OSError):
-        pass
+    for directory in FOLDER_TO_CLEANUP_ON_CRASH:
+        remove_path = os.path.abspath(os.path.join(APP_FOLDER, directory))
+        if os.path.isdir(remove_path):
+            print(f'Removing leftovers in: {remove_path}')
+            try:
+                remove_folder_contents(remove_path)
+                os.rmdir(remove_path)
+            except (ImportError, OSError):
+                pass
 
 
 def remove_downloaded_files():

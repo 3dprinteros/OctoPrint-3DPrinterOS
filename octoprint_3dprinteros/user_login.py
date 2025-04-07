@@ -12,15 +12,17 @@
 
 import os
 import json
-import paths
+import hashlib
 import logging
 import marshal
+import pprint
 import time
 import threading
 
 import config
-from http_client import HTTPClient, HTTPClientPrinterAPIV1
+import paths
 from awaitable import Awaitable
+from http_client import HTTPClient, HTTPClientPrinterAPIV1
 
 
 class UserLogin(Awaitable):
@@ -28,7 +30,8 @@ class UserLogin(Awaitable):
     NAME = 'user login'
     STORAGE_PATH = os.path.join(paths.CURRENT_SETTINGS_FOLDER, 'stuff.bin')
     DEFAULT_PRINTER_PROFILES_PATH = os.path.join(os.path.dirname(__file__), 'default_printer_profiles.json')
-    USER_PRINTER_PROFILES_PATH = os.path.join(paths.CURRENT_SETTINGS_FOLDER, 'printer_profiles.json')
+    USER_PRINTER_PROFILES_PATH = os.path.join(paths.CURRENT_SETTINGS_FOLDER, 'user_printer_profiles.json')
+    CACHED_PRINTER_PROFILES_PATH = os.path.join(paths.CURRENT_SETTINGS_FOLDER, 'cached_printer_profiles.json')
     KEY = b"3dprinteros_used_to_store_password_hashes_in_almost_plain_text_but_no_more!"*3
     APIPRINTER_MODE = 'apiprinter'
     STREAMERAPI_MODE = 'streamerapi'
@@ -42,7 +45,7 @@ class UserLogin(Awaitable):
             pass
         except:
             return UserLogin.load_new_format_stuff_bin()
-    
+
     @staticmethod
     def load_new_format_stuff_bin():
         try:
@@ -146,16 +149,25 @@ class UserLogin(Awaitable):
 
     @staticmethod
     def apply_settings_mod(settings_mod):
-        current_settings = config.get_settings()
-        new_settings = config.merge_dictionaries(current_settings, settings_mod, overwrite=True)
-        config.Config.instance().settings = new_settings
-        logger = logging.getLogger(__name__)
-        logger.info("Setting modifications:\n" + str(new_settings))
+        if settings_mod:
+            logger = logging.getLogger(__name__)
+            if not isinstance(settings_mod, dict):
+                logger.warning("Server's setting mods is not dict:\n" + pprint.pformat(settings_mod))
+            else:
+                logger.info("Server's setting mods:\n" + pprint.pformat(settings_mod))
+                current_settings = config.get_settings()
+                new_settings = config.merge_dictionaries(current_settings, settings_mod, overwrite=True)
+                config.Config.instance().settings = new_settings
+                logger.info("Setting:\n" + pprint.pformat(new_settings))
 
     @staticmethod
     def load_local_printer_profiles():
         profiles = []
-        for path in (UserLogin.DEFAULT_PRINTER_PROFILES_PATH, UserLogin.USER_PRINTER_PROFILES_PATH):
+        if config.get_settings()['printer_profiles']['only_local']:
+            profile_sources = (UserLogin.DEFAULT_PRINTER_PROFILES_PATH, UserLogin.USER_PRINTER_PROFILES_PATH)
+        else:
+            profile_sources = (UserLogin.DEFAULT_PRINTER_PROFILES_PATH, UserLogin.CACHED_PRINTER_PROFILES_PATH, UserLogin.USER_PRINTER_PROFILES_PATH)
+        for path in profile_sources:
             try:
                 with open(path) as f:
                     profiles = UserLogin.merge_profiles(profiles, json.load(f))
@@ -167,24 +179,42 @@ class UserLogin(Awaitable):
         return profiles
 
     @staticmethod
-    def save_profiles(profiles):
+    def save_profiles(profiles, filename=None):
+        if not filename:
+            filename = UserLogin.CACHED_PRINTER_PROFILES_PATH
         try:
-            profiles = json.dumps(profiles, sort_keys = True, indent = 4, separators = (',', ': '))
-            with open(UserLogin.USER_PRINTER_PROFILES_PATH, "w") as f:
+            if not isinstance(profiles, str):
+                profiles = json.dumps(profiles, sort_keys = True, indent = 4, separators = (',', ': '))
+            with open(filename, "w") as f:
                 f.write(profiles)
         except (OSError, ValueError) as e:
-            logger = logging.getLogger(__name__)
-            logger.warning("Error saving profile file %s: %s" % (profiles, str(e)))
+            logging.getLogger(__name__).warning("Error saving profile file %s: %s" % (profiles, str(e)))
 
     @staticmethod
     def merge_profiles(base_profiles, updating_profiles):
         base_profiles_dict = {}
         for profile in base_profiles:
-            base_profiles_dict[profile.get('alias', "Unknown")] = profile
+            alias = profile.get('alias')
+            if not alias:
+                logging.getLogger(__name__).warning('Invalid profile(no alias):\n%s', pprint.pformat(profile))
+            elif 'name' not in profile:
+                logging.getLogger(__name__).warning('Invalid profile(no name):\n%s', pprint.pformat(profile))
+            elif not profile.get('vids_pids') and 'v2' not in profile:
+                logging.getLogger(__name__).warning('Invalid profile(no vids_pids or v2):\n%s', pprint.pformat(profile))
+            else:
+                base_profiles_dict[alias] = profile
         updating_profiles_dict = {}
         if updating_profiles:
             for profile in updating_profiles:
-                updating_profiles_dict[profile.get('alias', "Unknown")] = profile
+                alias = profile.get('alias')
+                if not alias:
+                    logging.getLogger(__name__).warning('Invalid profile(no alias):\n%s', pprint.pformat(profile))
+                elif 'name' not in profile:
+                    logging.getLogger(__name__).warning('Invalid profile(no name):\n%s', pprint.pformat(profile))
+                elif not profile.get('vids_pids') and 'v2' not in profile:
+                    logging.getLogger(__name__).warning('Invalid profile(no vids_pids or v2):\n%s', pprint.pformat(profile))
+                else:
+                    updating_profiles_dict[alias] = profile
         return list(config.merge_dictionaries(base_profiles_dict, updating_profiles_dict, overwrite=True).values())
 
     @staticmethod
@@ -203,6 +233,8 @@ class UserLogin(Awaitable):
         self.login = None
         self.macaddr = ''
         self.profiles = self.load_local_printer_profiles()
+        config.Config.instance().set_profiles(self.profiles)
+        self.profiles_sha256 = self.get_cloud_profiles_cache()
         self.auth_tokens = []
         self.login_lock = threading.RLock()
         self.retry_in_background = retry_in_background
@@ -213,30 +245,32 @@ class UserLogin(Awaitable):
             self.login_mode = self.STREAMERAPI_MODE
         else:
             self.login_mode = self.APIPRINTER_MODE
-        if auto_login and self.parent and not self.parent.offline_mode:
-            if retry_in_background:
-                self.login_retry_thread = threading.Thread(target=self.retry_login_until_success)
-                self.login_retry_thread.start()
-            else:
-                self.retry_login_until_success(exit_no_saved=True)
+        if auto_login and not self.parent or not self.parent.offline_mode:
+            if not self.login_from_saved_creds(exit_no_saved=False):
+                if retry_in_background:
+                    self.login_retry_thread = threading.Thread(target=self.retry_login_until_success)
+                    self.login_retry_thread.start()
+                else:
+                    self.retry_login_until_success(exit_no_saved=True)
         Awaitable.__init__(self, parent)
 
     def login_from_saved_creds(self, exit_no_saved=False):
         with self.login_lock:
             if self.login_mode == self.APIPRINTER_MODE:
-                if self.auth_tokens: #TODO is this check really necessary?
-                    return True
                 self.auth_tokens = self.load_printer_auth_tokens()
                 self.logger.info("Getting profiles without user login")
                 self.http_connection = HTTPClientPrinterAPIV1(self.parent, exit_on_fail=True)
                 profiles = []
                 if self.http_connection.connection:
                     self.got_network_connection = True
-                    profiles = self.http_connection.pack_and_send(HTTPClientPrinterAPIV1.PRINTER_PROFILES)
+                    if config.get_settings()['printer_profiles']['get_updates']:
+                        profiles = self.http_connection.pack_and_send(HTTPClientPrinterAPIV1.PRINTER_PROFILES)
+                        if profiles:
+                            self.save_profiles(profiles)
                 else:
                     self.got_network_connection = False
                 self.http_connection.close()
-                self.init_profiles(profiles)
+                self.update_profiles()
                 return True
             else:
                 if self.user_token:
@@ -254,7 +288,12 @@ class UserLogin(Awaitable):
                 else:
                     self.got_network_connection = False
                     error = "No network"
-                return not error or (exit_no_saved and not login) #return True when no token
+                if not error:
+                    if login:
+                        return True
+                    else:
+                        return exit_no_saved
+                return False
 
     def login_as_user(self, login=None, password=None, disposable_token=None, save_password_flag=True):
         with self.login_lock:
@@ -264,13 +303,14 @@ class UserLogin(Awaitable):
                 return 0, "Empty password"
             if not self.http_connection:
                 self.http_connection = HTTPClient(self.parent, exit_on_fail=True)
-            answer = self.http_connection.pack_and_send(HTTPClient.USER_LOGIN, login, password, disposable_token=disposable_token)
+            answer = self.http_connection.pack_and_send(HTTPClient.USER_LOGIN, \
+                    login, \
+                    password, \
+                    disposable_token=disposable_token, \
+                    profiles_sha256=self.profiles_sha256)
             if answer:
-                user_token = answer.get('user_token')
-                profiles_str = answer.get('all_profiles')
                 settings_mod = answer.get('settings_mod')
-                if settings_mod:
-                    self.apply_settings_mod(settings_mod)
+                self.apply_settings_mod(settings_mod)
                 error = answer.get('error', None)
                 if error:
                     self.logger.warning("Error processing user_login " + str(error))
@@ -284,28 +324,38 @@ class UserLogin(Awaitable):
                     return code, message
                 if login and save_password_flag:
                     self.save_login(login, password)
-                try:
-                    profiles = json.loads(profiles_str)
-                    if not profiles:
-                        raise RuntimeError("Server returned empty profiles on user login")
-                except Exception as e:
-                    self.user_token = user_token
-                    self.logger.warning("Error while parsing profiles: " + str(e))
-                    self.init_profiles()
-                    return 42, "Error parsing profiles"
+                profiles = answer.get('all_profiles', [])
+                if profiles and config.get_settings()['printer_profiles']['get_updates']:
+                    try:
+                        profiles_sha256 = hashlib.sha256(str(profiles).encode('ascii', errors='ignore')).hexdigest()
+                    except:
+                        profiles_sha256 = 'hash error'
+                    self.logger.info('Received cloud profiles with sha256: %s', profiles_sha256)
+                    self.save_profiles(profiles)
+                    if isinstance(profiles, str):
+                        try:
+                            profiles = json.loads(profiles)
+                        except:
+                            profiles = []
+                            self.logger.error("Server's user_login response got invalid printer profiles - not json")
+                    elif not isinstance(profiles, list):
+                        self.logger.error("Server's user_login response got invalid printer profiles - not json list")
+                        profiles = []
+                self.update_profiles()
+                self.macaddr = self.http_connection.host_id
+                if login:
+                    self.login = login
                 else:
-                    self.macaddr = self.http_connection.host_id
-                    self.user_token = user_token
-                    if login:
-                        self.login = login
+                    login_name = answer.get('user_login')
+                    if login_name:
+                        self.login = login_name
                     else:
-                        login_name = answer.get('user_login')
-                        if login_name:
-                            self.login = login_name
-                        else:
-                            self.login = "Temporary login"
-                    self.init_profiles(profiles)
-                    self.logger.info("Successful login from user %s" % self.login)
+                        self.login = "Temporary login"
+                user_token = answer.get('user_token')
+                if not user_token:
+                    raise ValueError('Server returned empty user token')
+                self.user_token = user_token
+                self.logger.info("Successful login from user %s" % self.login)
 
     def save_printer_auth_token(self, usb_info=None, auth_token=None):
         if usb_info and auth_token:
@@ -317,14 +367,9 @@ class UserLogin(Awaitable):
         self.auth_tokens = []
         self.save_printer_auth_token()
 
-    # TODO refactor printer profiles system; currently it is hacky due to remaking of merging priority from local to cloud and back 
-    def init_profiles(self, profiles=None):
-        if profiles:
-            self.save_profiles(profiles)
-        local_profiles = self.load_local_printer_profiles()
-        if profiles != local_profiles:
-            profiles = self.merge_profiles(local_profiles, profiles)
-            self.save_profiles(profiles)
+    def update_profiles(self, profiles=None):
+        if not profiles:
+            profiles = self.load_local_printer_profiles()
         self.profiles = profiles
         self.logger.info("Got profiles for %d printers" % len(self.profiles))
         config.Config.instance().set_profiles(self.profiles)
@@ -336,11 +381,23 @@ class UserLogin(Awaitable):
                     (self.parent and getattr(self.parent, 'offline_mode', False)))
 
     def retry_login_until_success(self, exit_no_saved=False):
-        while not self.parent or not getattr(self.parent, "stop_flag", False):
+        while not self.parent or not getattr(self.parent, "stop_flag"):
             if self.login_from_saved_creds(exit_no_saved) or self.check_function():
                 return
             time.sleep(2)
-            self.logger.info('Retrying with login...')
+
+    def get_cloud_profiles_cache(self):
+        try:
+            with open(self.CACHED_PRINTER_PROFILES_PATH, encoding='ascii') as f:
+                profiles_string = f.read()
+                cloud_profiles_sha256 = hashlib.sha256(profiles_string.encode('ascii', errors='ignore')).hexdigest()
+                self.logger.info('Current printers profiles sha256: ' + cloud_profiles_sha256)
+        except FileNotFoundError:
+            cloud_profiles_sha256 = ''
+        except Exception as e:
+            self.logger.exception('Error calculating printer profiles hash:' + str(e))
+            cloud_profiles_sha256 = ''
+        return cloud_profiles_sha256
 
 
 if __name__ == "__main__":

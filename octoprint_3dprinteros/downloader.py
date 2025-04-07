@@ -10,15 +10,14 @@
 # (available at https://www.3dprinteros.com/terms-and-conditions/),
 # and privacy policy (available at https://www.3dprinteros.com/privacy-policy/)
 
-import logging
 import os
-import requests
-import pathlib
-import sys
 import tempfile
 import threading
 import time
-import gzip
+import io
+
+import requests
+import certifi
 
 import config
 import log
@@ -36,6 +35,14 @@ class Downloader(threading.Thread):
         self.parent = parent
         self.url = url
         self.callback = callback
+        self.in_memory_gcodes = False
+        if config.get_settings()['in_memory_gcodes']:
+            try:
+                self.in_memory_gcodes = getattr(parent.sender, 'print_bytes')
+                if self.in_memory_gcodes:
+                    self.logger.info('In memory gcodes mode enabled')
+            except:
+                pass
         self.is_zip = is_zip
         self.cancel_flag = False
         self.download_size = 0
@@ -47,9 +54,13 @@ class Downloader(threading.Thread):
     @log.log_exception
     def run(self):
         self.logger.info('Starting downloading')
-        downloaded_filename = self.download()
-        if downloaded_filename:
-            self.execule_callback(downloaded_filename)
+        downloaded = self.download()
+        if downloaded and self.callback:
+            if self.in_memory_gcodes:
+                self.logger.info('In memory gcodes mode enabled. Overriding download complete callback with load_text')
+                self.parent.sender.print_bytes(downloaded)
+            else:
+                self.execule_callback(downloaded)
         if self.cancel_flag:
             self.logger.info('Cancel command was received after printing start in downloading thread')
             try:
@@ -68,20 +79,27 @@ class Downloader(threading.Thread):
             self.callback(f)
 
     def download(self):
-        self.logger.info("Downloading from " + self.url)
+        if config.get_settings().get('hide_sensitive_log'):
+            self.logger.info("Downloading from __hidden__")
+        else:
+            self.logger.info("Downloading from " + self.url)
         if self.is_zip:
             suffix = ".zip"
         else:
             suffix = ".gcode"
-        self.tmp_file = tempfile.NamedTemporaryFile(mode='wb', dir=paths.DOWNLOAD_FOLDER,
+        if self.in_memory_gcodes:
+            tmp_file = io.BytesIO()
+            filename = None
+        else:
+            tmp_file = tempfile.NamedTemporaryFile(mode='wb', dir=paths.DOWNLOAD_FOLDER,
                 delete=False, prefix='3dprinteros-', suffix=suffix)
-        filename = self.tmp_file.name
+            filename = tmp_file.name
         retry = 0
         compression = None
         while retry < self.MAX_RETRIES and not self.parent.stop_flag and not self.cancel_flag:
             if retry:
                 self.logger.warning("Download retry/resume N" + str(retry))
-            self.logger.info("Connecting to " + self.url)
+            self.logger.info("Connecting to server...")
             headers = { 'Accept-Encoding': 'identity, deflate, compress, gzip',
                      'Accept': '*/*', 'User-Agent': 'python-requests/{requests.__version__}'}
             if self.downloaded_bytes:
@@ -89,13 +107,13 @@ class Downloader(threading.Thread):
                     self.downloaded_bytes = 0
                     self.percent = 0.0
                     self.written_bytes = 0
-                    self.tmp_file.truncate(0)
+                    tmp_file.truncate(0)
                     self.logger.info(f'Unable to resume with compression {compression}. Restarting download')
                 else:
                     headers['Range'] = 'bytes=%d-' % self.downloaded_bytes
                     self.logger.info(f'Resuming download from {self.downloaded_bytes}')
             try:
-                response = requests.get(self.url, headers = headers, stream=True, timeout = self.CONNECTION_TIMEOUT)
+                response = requests.get(self.url, headers = headers, stream=True, timeout = self.CONNECTION_TIMEOUT, verify=certifi.where())
             except Exception as e:
                 response = None
                 self.parent.register_error(65, "Unable to open download link: " + str(e), is_blocking=False)
@@ -111,30 +129,39 @@ class Downloader(threading.Thread):
                         compression = response.headers.get('Content-Encoding')
                         if compression:
                             self.logger.info("Download compression encoding: " + str(compression))
-                    self.downloaded_bytes += self.download_chunks(response)
+                    self.downloaded_bytes += self.download_chunks(response, tmp_file)
                     self.logger.info(f"Downloaded {self.downloaded_bytes}B")
                     if self.downloaded_bytes == self.download_size:
-                            self.logger.info(f'Downloading finished in {self.download_size}B. Written {self.written_bytes}B')
-                            self.tmp_file.close()
-                            return filename
+                        self.logger.info(f'Success. Downloaded: {self.download_size}B. Wrote: {self.written_bytes}B')
+                        if self.in_memory_gcodes:
+                            tmp_file.seek(0)
+                            ret = tmp_file.read()
+                        else:
+                            ret = filename
+                        tmp_file.close()
+                        return ret
                     elif self.downloaded_bytes > self.download_size:
-                        self.parent.register_error(66, "Download error: data is corrupted", is_blocking=True)
+                        self.parent.register_error(66, "Download error: data is corrupted. Expected: {self.download_size}B. Downloaded: {self.download_size}B. Wrote: {self.written_bytes}B", is_blocking=False)
                         break
                     else: 
-                        self.parent.register_error(66, "Download error: connection lost. Retrying/resuming", is_blocking=False)
+                        self.parent.register_error(66, "Download error: connection was lost. Expected: {self.download_size}B. Downloaded: {self.download_size}B. Wrote: {self.written_bytes}B", is_blocking=False)
             finally:
                 if response:
                     response.close()
                 retry += 1
                 time.sleep(1)
-        self.parent.register_error(66, 'Download error: unable to finish download', is_blocking=True)
-        self.tmp_file.close()
+        self.parent.register_error(66, 'Download error: unable to complete download', is_blocking=True)
         try:
-            os.remove(filename)
+            tmp_file.close()
+        except:
+            pass
+        try:
+            if filename:
+                os.remove(filename)
         except:
             pass
 
-    def download_chunks(self, response):
+    def download_chunks(self, response, tmp_file):
         downloaded_bytes = 0
         prev_percent = 0
         try:
@@ -150,13 +177,13 @@ class Downloader(threading.Thread):
                         prev_percent = self.percent
                 else:
                     self.logger.info(f"File downloading: {(downloaded_bytes + self.downloaded_bytes) // 1024}kB")
-                self.tmp_file.write(chunk)
+                tmp_file.write(chunk)
                 self.written_bytes += len(chunk)
         except Exception as e:
             self.parent.register_error(69, 'Download error: chunk error: ' + str(e), is_blocking=False)
+            return downloaded_bytes
         else:
             self.percent = 100
-        finally:
             return downloaded_bytes
 
     def cancel(self):

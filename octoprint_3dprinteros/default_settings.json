@@ -8,12 +8,18 @@
   },
   "web_interface": {
     "enabled": false,
-    "browser_opening_on_start": true,
+    "browser_opening_on_start": false,
     "port": 8008,
     "port_https": 0
   },
   "qt_interface": {
-    "enabled": false
+    "enabled": false,
+    "fullscreen": false,
+    "resolution": [
+        800,
+        480
+    ],
+    "alt_local_folder": ""
   },
   "active_detectors": {
       "StaticDetector": true,
@@ -35,7 +41,9 @@
     "erase_on_start": false,
     "auto_report_exceptions": false,
     "logs_sending": true,
-    "request_skip": 0
+    "request_skip": 0,
+    "max_record_len": 2048,
+    "qml": true
   },
   "update": {
     "enabled": false,
@@ -52,14 +60,20 @@
     "hardware_resize": true,
     "binary_jpeg": false,
     "restart_on_error_output": false,
+    "reconnect": true,
     "empty_frame_error": false,
     "network_input": true,
+    "usb_input": true,
     "reinit_on_no_cam": false,
     "no_subprocess": true,
+    "snap_cam_url": "http://127.0.0.1/webcam/?action=snapshot",
     "http_output" : {
         "enabled": false,
         "only_localhost": true,
         "port": 8009
+    },
+    "from_sender": {
+        "bambulab_lan_cam": true
     }
   },
   "virtual_printer": {
@@ -72,6 +86,9 @@
     "forced_type": "Marlin"
   },
   "remote_control": {
+    "allow_no_auth_localhost": true,
+    "auto_auth_localhost": true,
+    "auth_using_os": false,
     "web_server": false,
     "broadcasting": true,
     "detectable": false
@@ -111,24 +128,46 @@
   },
   "no_empty_serials": true,
   "backward_compatible_serials": false,
-  "port_parity_hack": true,
+  "port_parity_hack": false,
   "keep_print_files": false,
-  "request_dumping": false,
-  "pre_login_ui": false,
+  "pre_login_ui": true,
   "subprocess_zip": true,
   "dynamic_gcodes_buffer": true,
+  "in_memory_gcodes": false,
   "intercept_pause": false,
   "klipper": {
-      "host_port": "/tmp/printer"
+      "enabled": true,
+      "multi": false,
+      "custom_port": "",
+      "unique_snr": true
   },
   "gpio_uart": {
       "enabled": false,
+      "allow_use_with_buttons": false,
       "ports": ["/dev/ttyAMA0"]
   },
   "disable_resend_max": false,
-  "dim_display_on_quit": true,
   "restore_pos_on_resume": false,
-  "sdcard_upload_block_size": 4096,
-  "no_ok_timeout": true,
-  "custom_settings_home": ""
+  "ok_timeout": true,
+  "sdcard_upload_block_size": 1024,
+  "custom_settings_home": "",
+  "host_commands": true,
+  "host_action_commands": true,
+  "autostart_queue": false,
+  "local_moonraker": {
+      "always_on": false,
+      "port": 7125
+  },
+  "line_end_on_connect": true,
+  "port_creation_wait": 1.0,
+  "quit": {
+      "allow_poweroff": false,
+      "always_restart": false,
+      "dim_display": false
+  },
+  "printer_profiles": {
+      "get_updates": true,
+      "only_local": false
+  },
+  "forbid_uploads": false
 }

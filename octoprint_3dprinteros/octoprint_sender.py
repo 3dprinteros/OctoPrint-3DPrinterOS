@@ -34,7 +34,7 @@ class Sender(BaseSender):
         self.temps = [0.0, 0.0, 0.0]
         self.target_temps = [0.0, 0.0, 0.0]
         self.parent = parent
-        self.app = parent.parent
+        self.app = parent.app
         self.octo_printer = self.app.owner.get_octo_printer()
         self.file_manager = self.app.owner.get_octo_file_manager()
         self.last_octoprint_status_update_time = 0.0
@@ -126,7 +126,7 @@ class Sender(BaseSender):
         if self.is_printing():
             percent = self.get_current_data().get('progress', {}).get('completion')
             if percent is not None:
-                self.percent = float(percent)
+                self.percent = round(float(percent), 2)
         return self.percent
 
     def get_current_line_number(self):
@@ -157,17 +157,17 @@ class Sender(BaseSender):
                 self.last_octoprint_temps_update_time = now
                 if 'bed' in octo_temps_dict:
                     bed_dict = octo_temps_dict.get('bed', {})
-                    self.temps[0] = bed_dict.get('actual', 0.0)
-                    self.target_temps[0] = bed_dict.get('target', 0.0)
+                    self.temps[0] = round(bed_dict.get('actual', 0.0), 2)
+                    self.target_temps[0] = round(bed_dict.get('target', 0.0), 2)
                 if 'tool0' in octo_temps_dict:
-                    self.temps[1] = octo_temps_dict['tool0']['actual']
-                    self.target_temps[1] = octo_temps_dict['tool0']['target']
+                    self.temps[1] = round(octo_temps_dict['tool0']['actual'], 2)
+                    self.target_temps[1] = (octo_temps_dict['tool0']['target'], 2)
                 if 'tool1' in octo_temps_dict:
                     if len(self.temps) == 2:
                         self.temps.append(0)
                         self.target_temps.append(0)
-                    self.temps[2] = octo_temps_dict['tool1']['actual']
-                    self.target_temps[2] = octo_temps_dict['tool1']['target']
+                    self.temps[2] = round(octo_temps_dict['tool1']['actual'], 2)
+                    self.target_temps[2] = round(octo_temps_dict['tool1']['target'], 2)
                 # self.last_octoprint_temps_update_time = now
                 # for index, temp_name in enumerate(self.TEMP_NAMES):
                 #     temp_dict = octo_temps_dict.get(temp_name)

@@ -20,11 +20,16 @@ import http.client
 import logging
 import subprocess
 import threading
+import ifaddr
 
 import config
 import version
 import platforms
 import client_ssl_context
+try:
+    from branch_stuff import BRANCH_TOKEN
+except:
+    BRANCH_TOKEN = None
 
 
 def get_printerinterface_protocol_connection():
@@ -36,24 +41,6 @@ def get_printerinterface_protocol_connection():
         connection = HTTPClientPrinterAPIV1
     return connection
 
-
-def remove_repeted_errors(message_pack):
-    if 'errors' in message_pack:
-        errors_set = set()
-        errors = []
-        for error in message_pack['errors']:
-            error_tuple = tuple(error.items())
-            if error_tuple not in errors_set:
-                errors_set.add(error_tuple)
-                errors.append(dict(error))
-        for error in errors:
-            for key in ('send', 'displayed', 'when', 'static'):
-                try:
-                    error.pop(key)
-                except:
-                    pass
-        message_pack['errors'] = errors
-        
 
 class HTTPClient:
 
@@ -68,7 +55,7 @@ class HTTPClient:
     RECONNECT_AFTER_N_ERRORS = 5
     COMMAND_REQ_SIZE_WARNING_THRS = 2048
     CAMERA_REQ_SIZE_WARNING_THRS = 200*4096
-    MAX_RESP_LEN = 512
+    MAX_RESP_LEN = config.get_settings()['logging'].get('max_record_len', 512)
     API_PREFIX = '/streamerapi/'
     USER_LOGIN =  'user_login'
     PRINTER_LOGIN = 'printer_login'
@@ -76,14 +63,17 @@ class HTTPClient:
     TOKEN_SEND_LOGS = 'sendlogs'
     CAMERA = 'camera' #json['image': base64_image ]
     CAMERA_IMAGEJPEG = 'camera_image_jpeg' # body is pure binary jpeg data, but header got id information
+    GET_JOBS = 'get_queued_jobs'
+    START_JOB = 'start_queued_job'
     DEFAULT_HEADERS = {"Content-Type": "application/json"}
     EMPTY_COMMAND = {"command" : None}
     SEND_LOGS_TOKEN_FIELD_NAME = 'user_token'
+    IS_LINK_BYTES = b"is_link"
 
     def __init__(self, parent, keep_connection_flag = True, logging_level = logging.INFO, exit_on_fail=False):
         self.parent = parent
         self.parent_usb_info = getattr(parent, 'usb_info', None)
-        if parent:
+        if parent and hasattr(parent, 'logger'):
             self.logger = parent.logger.getChild(self.__class__.__name__)
         else:
             self.logger = logging.getLogger(self.__class__.__name__ + "." + str(self.parent_usb_info))
@@ -93,8 +83,9 @@ class HTTPClient:
         self.exit_on_fail = exit_on_fail
         self.timeout = self.BASE_TIMEOUT
         self.errors_until_reconnect = self.RECONNECT_AFTER_N_ERRORS
-        if hasattr(parent, 'parent'): #TODO refactor mess with non universal mac and local_ip
-            app = parent.parent
+        self.hide_sensitive_log = config.get_settings().get('hide_sensitive_log', False)
+        if hasattr(parent, 'app'): #TODO refactor mess with non universal mac and local_ip
+            app = parent.app
         else:
             app = parent
         self.local_ip = None
@@ -113,10 +104,12 @@ class HTTPClient:
         host_id = self.get_serial_number()
         if not host_id:
             host_id = self.get_macaddr(self.local_ip)
+            self.macaddr = host_id
         if not host_id:
             self.logger.warning("Warning! Can't get MAC address! Using uuid.getnode()")
             host_id = hex(uuid.getnode()) + "L"
-        return host_id 
+            self.macaddr = host_id
+        return host_id
 
     # machine id is mac address, but on RPi we use machine serial
     @staticmethod
@@ -132,11 +125,11 @@ class HTTPClient:
                                 return None
                             return serial
             except (OSError, IndexError):
-                logging.getLogger('HTTPClient.get_serial_number').error('Error on parsing cpuinfo')
+                logging.getLogger('HTTPClient').error('Error on parsing cpuinfo')
 
     @staticmethod
     def format_mac_addr(macaddr, old_macid_compat=True):
-        macddr = macaddr.replace(':', '').replace('-', '').lower() 
+        macddr = macaddr.replace(':', '').replace('-', '').lower()
         if old_macid_compat:
             macddr = '0x' + macddr + 'L'
         return macddr
@@ -144,34 +137,43 @@ class HTTPClient:
     @staticmethod
     def get_macaddr(local_ip, retry=0, old_macid_compat=True):
         if local_ip:
-            if platforms.PLATFORM in ("rpi", 'linux', "mac"):
-                stdout = subprocess.run(['ifconfig'], stdout=subprocess.PIPE, universal_newlines=True).stdout
-                for splitter in ("flags=", "Link"):
-                    if splitter in stdout:
-                        interfaces = stdout.split(splitter) #can get name of interface wrong, but we don't need name
-                        break
-                else:
-                    return
-                for interface in interfaces:
-                    if 'inet ' + local_ip in interface:
-                        search = re.search('ether\s([0-9a-f\:]+)', interface)
+            try:
+                if platforms.PLATFORM in ("rpi", "linux"):
+                    for adapter in ifaddr.get_adapters():
+                        for ip in adapter.ips:
+                            if ip.ip == local_ip:
+                                with open('/sys/class/net/' + ip.nice_name + '/address') as f:
+                                    return HTTPClient.format_mac_addr(f.read().strip(), old_macid_compat=old_macid_compat)
+                elif platforms.PLATFORM == "win":
+                    stdout = subprocess.run(['ipconfig', '/all'], stdout=subprocess.PIPE, universal_newlines=True, creationflags=subprocess.CREATE_NO_WINDOW).stdout
+                    interfaces = stdout.split("\n\n")
+                    for interface in interfaces:
+                        search = re.search(r'IP.*:\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', interface)
                         if search:
-                            return HTTPClient.format_mac_addr(search.group(1), old_macid_compat=old_macid_compat)
-                    elif 'inet addr:' + local_ip in interface:
-                            search = re.search('HWaddr\s([0-9a-f\:]+)', interface)
+                            ip = search.group(1)
+                            if ip == local_ip:
+                                search = re.search(r'[A-F0-9]{2}\-[A-F0-9]{2}\-[A-F0-9]{2}\-[A-F0-9]{2}\-[A-F0-9]{2}\-[A-F0-9]{2}', interface)
+                                if search:
+                                    return HTTPClient.format_mac_addr(search.group(0), old_macid_compat)
+                else:
+                    stdout = subprocess.run(['ifconfig'], stdout=subprocess.PIPE, universal_newlines=True).stdout
+                    for splitter in ("flags=", "Link"):
+                        if splitter in stdout:
+                            interfaces = stdout.split(splitter) #can get name of interface wrong, but we don't need name
+                            break
+                    else:
+                        return
+                    for interface in interfaces:
+                        if 'inet ' + local_ip in interface:
+                            search = re.search(r'ether\s([0-9a-f\:]+)', interface)
                             if search:
                                 return HTTPClient.format_mac_addr(search.group(1), old_macid_compat=old_macid_compat)
-            else:
-                stdout = subprocess.run(['ipconfig', '/all'], stdout=subprocess.PIPE, universal_newlines=True, creationflags=subprocess.CREATE_NO_WINDOW).stdout
-                interfaces = stdout.split("\n\n")
-                for interface in interfaces:
-                    search = re.search('IP.*:\s(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})', interface)
-                    if search:
-                        ip = search.group(1)
-                        if ip == local_ip:
-                            search = re.search('[A-F0-9]{2}\-[A-F0-9]{2}\-[A-F0-9]{2}\-[A-F0-9]{2}\-[A-F0-9]{2}\-[A-F0-9]{2}', interface)
+                        elif 'inet addr:' + local_ip in interface:
+                            search = re.search(r'HWaddr\s([0-9a-f\:]+)', interface)
                             if search:
-                                return HTTPClient.format_mac_addr(search.group(0), old_macid_compat)
+                                return HTTPClient.format_mac_addr(search.group(1), old_macid_compat=old_macid_compat)
+            except (OSError, IndexError, subprocess.SubprocessError, UnicodeDecodeError):
+                logging.getLogger('HTTPClient').exception('Error on getting macaddr:')
             if retry < HTTPClient.GET_MAC_MAX_RETRIES:
                 time.sleep(0.1)
                 retry += 1
@@ -179,7 +181,7 @@ class HTTPClient:
 
     def connect(self):
         #self.logger.debug('{ Connecting...')
-        while not self.parent.stop_flag and not getattr(self.parent, "offline_mode", False):
+        while not getattr(self.parent, "stop_flag", False) and not getattr(self.parent, "offline_mode", False):
             if self.HTTPS_MODE:
                 connection_class = http.client.HTTPSConnection
                 kwargs = {'context': client_ssl_context.SSL_CONTEXT}
@@ -206,7 +208,8 @@ class HTTPClient:
                     time.sleep(1)
                 else:
                     #self.logger.debug('...success }')
-                    self.logger.info('Connected to server from: %s %s' % (self.local_ip, self.host_id))
+                    if not self.exit_on_fail:
+                        self.logger.info('Connected to server from: %s %s' % (self.local_ip, self.host_id))
                     return connection
 
     def request(self, method, connection, path, payload, headers=None):
@@ -217,26 +220,28 @@ class HTTPClient:
         headers["Content-Length"] = len(payload)
         if self.keep_connection_flag:
             headers['Connection'] = 'keep-alive'
-        try: 
+        try:
             connection.request(method, path, payload, headers)
             resp = connection.getresponse()
         except Exception as e:
-            self.parent.register_error(6, 'Error during HTTP request:' + str(e), is_info=True)
+            if self.parent:
+                self.parent.register_error(6, 'Error during HTTP request:' + str(e), is_info=True)
             time.sleep(1)
         else:
             #self.logger.debug('Response status: %s %s' % (resp.status, resp.reason))
             try:
                 received = resp.read()
             except Exception as e:
-                self.parent.register_error(7, 'Error reading response: ' + str(e), is_info=True)
+                if self.parent:
+                    self.parent.register_error(7, 'Error reading response: ' + str(e), is_info=True)
             else:
                 if resp.status == http.client.OK and resp.reason == "OK":
                     #self.logger.debug("...success }")
                     self.errors_until_reconnect = self.RECONNECT_AFTER_N_ERRORS
                     return received
-                else:
-                    message = 'Error: server responded with non 200 OK:\t%s %s %s' %\
-                            (resp.status, resp.reason, received)
+                message = 'Error: server responded with non 200 OK:\t%s %s %s' %\
+                        (resp.status, resp.reason, received)
+                if self.parent:
                     self.parent.register_error(8, message, is_info=True)
         #self.logger.debug('...failed }')
         self.logger.warning('Warning: HTTP request failed!')
@@ -245,13 +250,16 @@ class HTTPClient:
         with self.lock:
             path, packed_message = self.pack(target, *payloads, **kwargs_payloads)
             if target == self.CAMERA or target == self.CAMERA_IMAGEJPEG:
-                self.logger.info(f"REQ({target}):\nCamera frame len: {len(packed_message)}B")
+                self.logger.info(f"REQ({target}):\nCamera frame: {len(packed_message)}B")
             else:
-                self.logger.info(f"REQ({target}):\n{packed_message}")
+                if BRANCH_TOKEN:
+                    self.logger.info(f"REQ({target}):\n{packed_message.replace(BRANCH_TOKEN, '__hidden__')}")
+                else:
+                    self.logger.info(f"REQ({target}):\n{packed_message}")
             return self.send(path, packed_message)
 
     def send(self, path, data, headers = None):
-        while not self.parent.stop_flag and not getattr(self.parent, "offline_mode", False):
+        while not getattr(self.parent, "stop_flag", False) and not getattr(self.parent, "offline_mode", False):
             if not self.errors_until_reconnect:
                 self.errors_until_reconnect = self.RECONNECT_AFTER_N_ERRORS
                 self.close()
@@ -279,13 +287,17 @@ class HTTPClient:
             message = { 'login': {'user': args[0], 'password': args[1]},
                      'platform': platforms.PLATFORM, 'host_mac': self.host_id,
                      'local_ip': self.local_ip, 'version': version.version + version.branch}
+            if BRANCH_TOKEN:
+                message['branch_token'] = BRANCH_TOKEN
             if 'disposable_token' in kwargs:
                 message['login']['disposable_token'] = kwargs['disposable_token']
+                del kwargs['disposable_token']
         elif target == self.PRINTER_LOGIN:
-            message = { 'user_token': args[0], 'printer': args[1], 'version': version.version + version.branch,  
-                     'message_time': time.ctime(),
-                     'camera': config.get_app().camera_controller.get_current_camera_name(),
-                     'verbose': config.get_settings()['verbose'] }
+            message = { 'user_token': args[0], 'printer': args[1],
+                        'version': version.version + version.branch,
+                        'message_time': time.ctime(),
+                        'camera': config.get_app().camera_controller.get_current_camera_name(),
+                        'verbose': config.get_settings()['verbose'] }
         elif target == self.COMMAND:
             message = { 'printer_token': args[0], 'report': args[1], 'command_ack': args[2] }
             if not message['command_ack']:
@@ -294,20 +306,33 @@ class HTTPClient:
             message = { 'user_token': args[0], 'camera_number': args[1], 'camera_name': args[2],
                      'file_data': args[3], 'host_mac': self.host_id }
         elif target == self.CAMERA_IMAGEJPEG:
-            message = { 'user_token': args[0], 'camera_number': args[1], 'camera_name': args[2], 'host_mac': self.host_id }
+            message = { 'user_token': args[0],
+                        'camera_number': args[1],
+                        'camera_name': args[2],
+                        'host_mac': self.host_id }
+        elif target == self.GET_JOBS:
+            message = { "printer_token": args[0] }
+        elif target == self.START_JOB:
+            message = { "printer_token": args[0], "job_id": args[1] }
+            if kwargs.get('automatic'):
+                message = { "printer_token": args[0], "job_id": args[1], 'automatic': True }
         else:
-            self.parent.register_error(4, 'No such target for packaging: ' + target)
+            if self.parent:
+                self.parent.register_error(4, 'No such target for packaging: ' + target)
             message, target = None, None
         for key, value in list(kwargs.items()):
             message[key] = value
         message.update(kwargs)
-        remove_repeted_errors(message)
         #self.logger.info(f"Message: {target} {message}")
         return self.API_PREFIX + target, json.dumps(message)
 
     def unpack(self, json_text, path):
-        if json_text and len(json_text) > self.MAX_RESP_LEN:
+        if not json_text:
+            self.logger.info("RESP(%s):\n%s", path, json_text)
+        elif len(json_text) > self.MAX_RESP_LEN:
             self.logger.info("RESP(%s):\n%s", path, json_text[:self.MAX_RESP_LEN] + b"...")
+        elif self.hide_sensitive_log and self.IS_LINK_BYTES in json_text:
+            self.logger.info("RESP(%s):\n%s", path, '__hidden__')
         else:
             self.logger.info("RESP(%s):\n%s", path, json_text)
         try:
@@ -316,15 +341,18 @@ class HTTPClient:
             else:
                 data = self.EMPTY_COMMAND
         except (ValueError, TypeError):
-            self.parent.register_error(2, f'Response on {path} is not valid json: {json_text}')
+            if self.parent:
+                self.parent.register_error(2, f'Response on {path} is not valid json: {json_text}')
         else:
-            if data == []: # this is needed to support '[]' answer that exist in the protocol due to shitcode
+            if data == []: # this is needed to support '[]' answer that exist in the protocol due to php used in cloud servers
                 data = self.EMPTY_COMMAND
-            if type(data) == dict or type(data) == list: # NOTE == list is used only for printer profiles
+            # NOTE == list is used only for printer profiles
+            if type(data) == dict or type(data) == list:
                 return data
             else:
                 message = f'Response on {path} is not dictionary or list. {type(data)} {data}'
-                self.parent.register_error(3, message)
+                if self.parent:
+                    self.parent.register_error(3, message)
 
     def get_parent_name(self):
         parent_name = "None"
@@ -333,8 +361,68 @@ class HTTPClient:
             parent_name = str(parent.__class__.__name__)
         return parent_name
 
+    def get_jobs_list(self, token):
+        jobs_list_or_error = self.pack_and_send(self.GET_JOBS, token)
+        self.logger.debug(f"Jobs list: {jobs_list_or_error}")
+        if not jobs_list_or_error:
+            self.logger.debug("Empty jobs queue")
+            return [], None
+        if isinstance(jobs_list_or_error, dict):
+            self.logger.debug(f"Jobs: {jobs_list_or_error}")
+            error = jobs_list_or_error.get('error')
+            code = jobs_list_or_error.get('code')
+            if error:
+                return [], jobs_list_or_error
+            else:
+                self.logger.warning("Empty jobs queue")
+                return [], None
+        elif isinstance(jobs_list_or_error, list):
+            return jobs_list_or_error, None
+        self.logger.warning('Unexpected response on get queued jobs list request!\n' + str(jobs_list_or_error))
+        return [], None
+
+    def start_job_by_id(self, token, job_id):
+        response = self.pack_and_send(self.START_JOB, token, job_id)
+        self.logger.debug(f"Start job result: {response}")
+        if response == None:
+            return False
+        elif response == "" or response == []:
+            return True
+        elif response:
+            if isinstance(response, dict):
+                if 'error' in response:
+                    self.logger.warning('Error stating job: ' + str(response))
+                    return False
+                else:
+                    return True
+        self.logger.warning('Unexpected response on start job request!')
+        return False
+
+    def start_next_job(self, token, automatic=False):
+        jobs_list_or_error = self.pack_and_send(self.GET_JOBS, token)
+        if jobs_list_or_error:
+            self.logger.info(f"Jobs list: {jobs_list_or_error}\n")
+            if isinstance(jobs_list_or_error, dict):
+                error = jobs_list_or_error.get('error')
+                code = jobs_list_or_error.get('code')
+                if not error:
+                    self.logger.warning("Empty jobs queue")
+                    return False
+            elif isinstance(jobs_list_or_error, list):
+                first_job_dict = jobs_list_or_error[0]
+                first_job_id = first_job_dict.get("id")
+                if first_job_id:
+                    if self.pack_and_send(self.START_JOB, token, first_job_id, automatic=automatic) != None:
+                        return True
+                else:
+                    self.logger.warning("No job id to send start job requests to the cloud")
+        else:
+            self.logger.warning("Empty jobs queue")
+        return False
+
     def close(self):
-        self.logger.info("Closing connection to server")
+        if not self.exit_on_fail:
+            self.logger.info("Closing connection to server")
         with self.connection_lock:
             if self.connection:
                 self.connection.close()
@@ -346,8 +434,6 @@ class HTTPClientPrinterAPIV1(HTTPClient):
     API_PREFIX = '/apiprinter/v1/printer/'
     REGISTER = 'register'
     PRINTER_PROFILES = 'get_printer_profiles'
-    GET_JOBS = 'get_queued_jobs'
-    START_JOB = 'start_queued_job'
     SEND_LOGS_TOKEN_FIELD_NAME = 'auth_token'
 
     @staticmethod
@@ -391,68 +477,8 @@ class HTTPClientPrinterAPIV1(HTTPClient):
            self.logger.error(f"Invalid http_client pack call:{target}, {args}, {kwargs}")
            return self.COMMAND, {}
         message.update(kwargs)
-        remove_repeted_errors(message)
         #self.logger.info(f"Message: {target} {message}")
         return self.API_PREFIX + target, json.dumps(message)
-
-    def get_jobs_list(self, token):
-        jobs_list_or_error = self.pack_and_send(self.GET_JOBS, token)
-        self.logger.debug(f"Jobs list: {jobs_list_or_error}")
-        if not jobs_list_or_error:
-            self.logger.debug("Empty jobs queue")
-            return [], None
-        if isinstance(jobs_list_or_error, dict):
-            self.logger.debug(f"Jobs: {jobs_list_or_error}")
-            error = jobs_list_or_error.get('error')
-            code = jobs_list_or_error.get('code')
-            if error:
-                return [], jobs_list_or_error
-            else:
-                self.logger.warning("Empty jobs queue")
-                return [], None
-        elif isinstance(jobs_list_or_error, list):   
-            return jobs_list_or_error, None
-        self.logger.warning('Unexpected response on get queued jobs list request!\n' + str(jobs_list_or_error))
-        return [], None
-
-    def start_job_by_id(self, token, job_id):
-        response = self.pack_and_send(self.START_JOB, token, job_id)
-        self.logger.debug(f"Start job result: {response}")
-        if response == None:
-            return False
-        elif response == "" or response == []:
-            return True
-        elif response:
-            if isinstance(response, dict):
-                if 'error' in response:
-                    self.logger.warning('Error stating job: ' + str(response))
-                    return False
-                else:
-                    return True
-        self.logger.warning('Unexpected response on start job request!')
-        return False
-
-    def start_next_job(self, token):
-        jobs_list_or_error = self.pack_and_send(self.GET_JOBS, token)
-        if jobs_list_or_error:
-            self.logger.info(f"Jobs list: {jobs_list_or_error}\n")
-            if isinstance(jobs_list_or_error, dict):
-                error = jobs_list_or_error.get('error')
-                code = jobs_list_or_error.get('code')
-                if not error:
-                    self.logger.warning("Empty jobs queue")
-                    return False
-            elif isinstance(jobs_list_or_error, list):   
-                first_job_dict = jobs_list_or_error[0]
-                first_job_id = first_job_dict.get("id")
-                if first_job_id:
-                    if self.pack_and_send(self.START_JOB, token, first_job_id) != None:
-                        return True
-                else:
-                    self.logger.warning("No job id to send start job requests to the cloud")
-        else:
-            self.logger.warning("Empty jobs queue")
-        return False
 
 
 # class ProtobufPrinterHTTPClient(HTTPClient, protobuf_protocol.ProtobufProtocol):
@@ -467,7 +493,6 @@ class HTTPClientPrinterAPIV1(HTTPClient):
 #             message = self.pack_command_request(*args, **kwargs)
 #         for kwarg in kwargs:
 #             setattr(message, kwarg, kwargs[kwarg])
-#         remove_repeted_errors(message)
 #         return self.API_PREFIX + target, message
 
 #     def unpack(self, message, path=None):
@@ -477,23 +502,3 @@ class HTTPClientPrinterAPIV1(HTTPClient):
 #             return self.unpack_command(message)
 #         elif answer_target == self.PRINTER_LOGIN:
 #             return self.unpack_printer_login(message)
-
-if __name__ == "__main__":
-
-    class FakeParent:
-
-        def __init__(self):
-            self.stop_flag = False
-
-        def register_error(self, *args, **kwargs):
-            print("Error args:", args)
-            print("Error kwargs:", kwargs)
-
-    host_id = HTTPClient(FakeParent(), keep_connection_flag=False, exit_on_fail=True).host_id
-    if "--id" in sys.argv:
-        print(host_id)
-    else:
-        if host_id:
-            print('Host ID:', host_id)
-        else:
-            print('Host id: cant determine')

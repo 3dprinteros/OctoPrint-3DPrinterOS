@@ -49,6 +49,7 @@ EXCEPTIONS_LOG_FILE = os.path.join(CURRENT_SETTINGS_FOLDER, 'critical_errors.log
 REPORT_FILE_NAME = 'problem_report.txt'
 DETECTION_REPORT_NAME = 'integration_request.txt'
 ATTACHMENTS_FOLDER_NAME = 'attachments'
+USER_SETTINGS_FILE_NAME = 'user_settings.json'
 REPORT_FILE = os.path.join(CURRENT_SETTINGS_FOLDER, REPORT_FILE_NAME)
 DETECTION_REPORT_FILE = os.path.join(CURRENT_SETTINGS_FOLDER, DETECTION_REPORT_NAME)
 PRINTERS_SUBFOLDER = 'printer_logs'
@@ -162,7 +163,7 @@ def report_exception():
     if not repeat_flag:
         config.set_last_exception(trace)
     try:
-        with open(EXCEPTIONS_LOG_FILE, "a+") as f: 
+        with open(EXCEPTIONS_LOG_FILE, "a+") as f:
             if not repeat_flag:
                 f.seek(0)
                 prev_exceptions = f.read()
@@ -195,7 +196,8 @@ def compress_logs():
                     or name == REPORT_FILE_NAME
                     or name == os.path.basename(CAMERA_LOG_FILE)
                     or name == DETECTION_REPORT_NAME
-                    or name == REPORT_FILE_NAME):
+                    or name == REPORT_FILE_NAME
+                    or name == USER_SETTINGS_FILE_NAME):
                 log_file_names.remove(name)
         for root, dirs, files in os.walk(os.path.join(CURRENT_SETTINGS_FOLDER, ATTACHMENTS_FOLDER_NAME)):
             for filename in files:
@@ -220,7 +222,7 @@ def compress_logs():
                 return zip_file_name_path
 
 
-def upload_compressed_logs(zip_file_path):
+def upload_compressed_logs(zip_file_path, token=None):
     # NOTE this upload should not be moved to http_client, because it only works reliably with requests(lib)
     # otherwise you will need to implement chunk uploading using http client
     # WARNING you will need a valid report_file for logs uploading to work!
@@ -234,21 +236,15 @@ def upload_compressed_logs(zip_file_path):
         + connection_class.URL \
         + connection_class.API_PREFIX \
         + connection_class.TOKEN_SEND_LOGS
+    files = {}
     try:
         if connection_class == http_client.HTTPClientPrinterAPIV1:
             url = connection_class.patch_api_prefix(url)
-            tokens = config.get_app().user_login.auth_tokens
-            if tokens: #FIXME not threadsafe and not taking in account multiple printers with apiprinter
-                token = config.get_app().user_login.auth_tokens[-1][1]
-            else:
-                return 'Error logs uploading failed: no auth token'
-        else:
-            token = config.get_app().user_login.user_token
         data = {connection_class.SEND_LOGS_TOKEN_FIELD_NAME: token}
         logger.info('Sending logs to %s' % url)
         response = None
         with open(zip_file_path, 'rb') as zip_file:
-            files = {'file_data': zip_file}
+            files['file_data'] = zip_file
             report_file = None
             if os.path.isfile(REPORT_FILE):
                 report_file = open(REPORT_FILE, 'rb')
@@ -257,9 +253,6 @@ def upload_compressed_logs(zip_file_path):
                 integration_file = open(DETECTION_REPORT_FILE, 'rb')
                 files['integration_request_file'] = integration_file
             response = requests.post(url, data=data, files=files)
-        for f in files:
-            if not files[f].closed:
-                files[f].close()
     except Exception as e:
         return 'Error while sending logs: ' + str(e)
     else:
@@ -275,17 +268,32 @@ def upload_compressed_logs(zip_file_path):
             if type(answer) == dict and not answer.get('success'):
                 return result
     finally:
-        if os.path.isfile(zip_file_path):
-            os.remove(zip_file_path)
+        for f in files:
+            try:
+                if not files[f].closed:
+                    files[f].close()
+            except:
+                pass
 
-
-def send_logs(force=False):
+def send_logs(force=False, token=None):
     logger = logging.getLogger(__name__)
     if force or config.get_settings()['logging']['logs_sending']:
+        if not token:
+            if config.get_settings()["protocol"].get("user_login"):
+                token = config.get_app().user_login.user_token
+            else:
+                try:
+                    token = config.get_app().user_login.auth_tokens[-1][1]
+                except:
+                    token = None
+            if not token:
+                return 'Error logs uploading failed: no auth token'
         zip_file_path = compress_logs()
         if not zip_file_path:
             return 'Error while packing logs'
-        error = upload_compressed_logs(zip_file_path)
+        error = upload_compressed_logs(zip_file_path, token)
+        if os.path.isfile(zip_file_path):
+            os.remove(zip_file_path)
         if error:
             logger.warning(error)
             return error
@@ -296,19 +304,27 @@ def send_logs(force=False):
 
 
 def clear_logs():
-    logger = logging.getLogger(__name__)
-    for handler in logger.handlers:
-        handler.flush()
-    remove_old_logs()
+    try:
+        logger = logging.getLogger(__name__)
+        for handler in logger.handlers:
+            handler.flush()
+    except:
+        pass
+    try:
+        remove_old_logs()
+    except (OSError, IOError):
+        pass
     try:
         with open(MAIN_LOG_NAME, 'w') as f:
             f.write(form_log_title() + "\n")
-        for filepath in (EXCEPTIONS_LOG_FILE, REPORT_FILE, DETECTION_REPORT_FILE):
+        if os.path.exists(EXCEPTIONS_LOG_FILE):
+            os.remove(EXCEPTIONS_LOG_FILE)
+        for filepath in (REPORT_FILE, DETECTION_REPORT_FILE):
             clear_log_file(filepath)
         printer_logs_subdir = os.path.join(CURRENT_SETTINGS_FOLDER, PRINTERS_SUBFOLDER)
         if os.path.isdir(printer_logs_subdir):
             for name in os.listdir(printer_logs_subdir):
-               clear_log_file(os.path.join(printer_logs_subdir, name))
+                clear_log_file(os.path.join(printer_logs_subdir, name))
     except Exception as e:
         error = 'Error while clearing logs: ' + str(e)
         logger.warning(error)
@@ -368,7 +384,8 @@ def get_file_tail(file_path):
 
 def form_log_title():
     return f'Version: {version.full_version_string()}\n' + \
-           f'Operating system: {platform.system()} {platform.release()}'
+           f'Platform system: {platform.platform()}\n' + \
+           f'Python: {sys.version}'
 
 
 def create_report(report_text):
@@ -378,9 +395,9 @@ def create_report(report_text):
         f.write(report_text)
 
 
-def report_problem(report_text):
+def report_problem(report_text, token=None):
     create_report(report_text)
-    result = send_logs()
+    result = send_logs(token)
     return result
 
 
@@ -404,3 +421,20 @@ def get_all_printer_logs_paths():
 
 def get_printer_log_file_path(printer_id):
     return os.path.join(paths.CURRENT_SETTINGS_FOLDER, PRINTERS_SUBFOLDER, printer_id + ".log")
+
+if __name__ == "__main__":
+    report_text = " ".join(sys.argv[1:])
+    if report_text:
+        create_report(report_text)
+    import user_login
+    ul = user_login.UserLogin(None)
+    if ul.user_token:
+        error = send_logs(True, ul.user_token)
+        if error:
+            print('Error sending logs: ' + str(error))
+            sys.exit(2)
+        else:
+            print('Logs send')
+    else:
+        print('Error unable to get token to unload logs')
+        sys.exit(1)

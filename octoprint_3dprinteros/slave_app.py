@@ -14,6 +14,7 @@
 from collections import OrderedDict
 
 import os
+import threading
 
 from static_and_stored_detect import StaticDetector
 from camera_controller import CameraController
@@ -24,36 +25,40 @@ import config
 import user_login
 
 
-class SlaveApp(app.App):
+class SlaveApp(app.App, threading.Thread):
 
-    #def __init__(self, owner=None, **kwargs):
+    QUIT_THREAD_JOIN_TIMEOUT = 6
+
     def __init__(self, owner=None):
         self.owner = owner
+        self.logger = owner._logger
         self.init_ok = None
         # for arg_name in kwargs:
         #     setattr(self, arg_name, kwargs[arg_name])
         app.App.__init__(self)
+        threading.Thread.__init__(self, daemon=True, name='3DPrinterOS App')
 
     def init_adv(self):
         for detector_class in (StaticDetector,):
             self.detectors[detector_class.__name__] = detector_class(self)
         self.user_login = user_login.UserLogin(self, retry_in_background=False)
+        if config.get_settings()["camera"].get("no_subprocess"):
+            self.camera_controller = NoSubprocCameraController(self)
+        else:
+            self.camera_controller = CameraController(self)
+        self.camera_controller.start_camera_process()
         if self.user_login.wait():
-            http_connection = getattr(self.user_login, "http_connection", None)
-            if http_connection:
-                self.local_ip = http_connection.local_ip
-                self.host_id = http_connection.host_id
-                self.macaddr = http_connection.macaddr
-                self.logger.info(f'IP:{self.local_ip} HostID:{self.host_id} MACAddr:{self.macaddr}')
             config.Config.instance().set_profiles(self.user_login.profiles)
             self.virtual_printer_enabled = config.get_settings()['virtual_printer']['enabled']
             self.virtual_printer_usb_info = dict(config.get_settings()['virtual_printer'])
             del self.virtual_printer_usb_info['enabled']
-            if config.get_settings()["camera"].get("no_subprocess"):
-                self.camera_controller = NoSubprocCameraController(self)
-            else:
-                self.camera_controller = CameraController(self)
-                self.init_ok = True
+            self.init_ok = True
+
+    def init_main_loop(self):
+        pass
+
+    def run(self):
+        super().init_main_loop()
 
     def quit(self):
         printer_interfaces = getattr(self, "printer_interfaces", [])
@@ -65,6 +70,8 @@ class SlaveApp(app.App):
             printer_name = pi.printer_profile.get('name', 'nameless printer')
             state = 'Joining ' + printer_name + ' ' + str(pi) + '...'
             self.close_module(state, pi.join, self.QUIT_THREAD_JOIN_TIMEOUT)
-        #self.owner = None
+        if hasattr(self, 'camera_controller'):
+            self.close_module('Closing camera...', self.camera_controller.stop_camera_process)
         self.init_ok = False
+        self.owner = None # for gb
         self.logger.info("3DPrinterOS app stopped")

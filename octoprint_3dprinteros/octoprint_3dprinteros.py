@@ -14,9 +14,7 @@ import copy
 import json
 import logging
 import pprint
-import os
 import time
-import threading
 
 import flask
 
@@ -24,12 +22,12 @@ import octoprint.plugin
 from octoprint.events import Events
 
 import config
+import paths
 from slave_app import SlaveApp
-from printer_interface import PrinterInterface
-from http_client import HTTPClient
 
 
 class Plugin3DPrinterOS(octoprint.plugin.StartupPlugin,
+                         octoprint.plugin.ShutdownPlugin,
                          octoprint.plugin.TemplatePlugin,
                          octoprint.plugin.SettingsPlugin,
                          octoprint.plugin.AssetPlugin,
@@ -56,7 +54,8 @@ class Plugin3DPrinterOS(octoprint.plugin.StartupPlugin,
         'RR2': {'name': 'Robo3D R2', 'VID': 'OCTO', 'PID': '0RR2'},
         'RC2': {'name': 'Robo3D C2', 'VID': 'OCTO', 'PID': '0RC2'},
         'MGM3': {'name': 'MakerGear M3-ID', 'VID': 'OCTO', 'PID': 'MGM3'},
-        'TLDQ2': {'name': 'TRILAB DeltiQ 2', 'VID': 'OCTO', 'PID': '0TD2'}
+        'TLDQ2': {'name': 'TRILAB DeltiQ 2', 'VID': 'OCTO', 'PID': '0TD2'},
+        'OCTOPRINT': {'name': 'Generic OctoPrint', 'VID': 'OCTO', 'PID': 'OCTO'}
     }
 
     @staticmethod
@@ -73,13 +72,31 @@ class Plugin3DPrinterOS(octoprint.plugin.StartupPlugin,
 
     def __init__(self):
         self.app = None
-        self.app_thread = None
 
     def on_after_startup(self):
-        if self.app_thread and self.app_thread.is_alive():
+        if self.app and self.app.is_alive():
             self._logger.info("Plugin for 3DPrinterOS started")
         else:
             self._logger.info("Plugin for 3DPrinterOS failed to start")
+
+    def on_shutdown(self):
+        self._logger.info("Plugin received shutdown call")
+        self.stop_printer_interface()
+        if self.app:
+            self.app.stop_flag = True
+            try:
+                self.app.join(10)
+            except:
+                pass
+
+    def on_plugin_pending_uninstall(self):
+        self._logger.info("Plugin received uninstall call")
+        paths.remove_folder_contents(paths.CURRENT_SETTINGS_FOLDER)
+
+    #NOTE called on each start on this plugin instead of actual cleanup on uninstall
+    def on_settings_cleanup(self):
+        self._logger.info("Plugin received cleanup call")
+        #paths.remove_folder_contents(paths.CURRENT_SETTINGS_FOLDER)
 
     def get_plugin_version(self):
         return self._plugin_version
@@ -91,7 +108,7 @@ class Plugin3DPrinterOS(octoprint.plugin.StartupPlugin,
         return dict(
             url="cli-cloud.3dprinteros.com",
             site_url="cloud.3dprinteros.com",
-            printer_type="RR2",
+            printer_type="OCTOPRINT",
             verbose=False,
             registered=False,
             serial=True,
@@ -108,6 +125,12 @@ class Plugin3DPrinterOS(octoprint.plugin.StartupPlugin,
 
     def get_template_vars(self):
         return dict(url='https://'+self._settings.get(['site_url']))
+
+    def get_octo_printer(self):
+        return self._printer
+
+    def get_octo_file_manager(self):
+        return self._file_manager
 
     def settings_load(self):
         printeros_settings = config.get_settings()
@@ -158,10 +181,15 @@ class Plugin3DPrinterOS(octoprint.plugin.StartupPlugin,
         )
 
     def initialize(self):
+        if self.app:
+            try:
+                self.app.stop_flag = True
+                self.app.join(10)
+            except:
+                pass
         self.app = SlaveApp(owner=self)
         #self.supported_printer_types = self.profiles_to_printer_types([profile for profile in self.app.user_login.profiles if profile['vids_pids'] and profile['vids_pids'][0] == 'OCTO'])
-        self.app_thread = threading.Thread(target=self.app.main_loop)
-        self.app_thread.start()
+        self.app.start()
         self.app.wait_for_printer()
         self.settings_load()
 
@@ -186,10 +214,16 @@ class Plugin3DPrinterOS(octoprint.plugin.StartupPlugin,
                     self.app.detectors['StaticDetector'].add_printer(printer_info, to_config=True)
 
     def on_event(self, event, payload):
-        #self._logger.debug("------------------------------------------------------------------------------")
-        #self._logger.debug("on_event %s: %s" % (event, str(payload)))
-        if self.app and self.app_thread.is_alive():
-            if event == Events.SETTINGS_UPDATED:
+        self._logger.info("------------------------------------------------------------------------------")
+        self._logger.info("on_event %s: %s" % (event, str(payload)))
+        if event == 'plugin_pluginmanager_enable_plugin':
+            if payload.get('id') == 'c3dprinteros':
+                self.initialize()
+        elif self.app and self.app.is_alive():
+            if event == 'plugin_pluginmanager_disable_plugin':
+                if payload.get('id') == 'c3dprinteros':
+                    self.on_shutdown()
+            elif event == Events.SETTINGS_UPDATED:
                 self._logger.info('OctoPrint settings update:')
                 self.settings_save()
             elif event == Events.CONNECTED:
@@ -198,6 +232,8 @@ class Plugin3DPrinterOS(octoprint.plugin.StartupPlugin,
             elif event == self.EVENT_START_PRINTER_INTERFACE:
                 self._logger.info('OctoPrint start printer interface')
                 self.start_printer_interface()
+            elif event == Events.SHUTDOWN:
+                self.app.stop_flag = True
             else:
                 pi = self.app.get_printer_interface()
                 if pi:
@@ -265,7 +301,7 @@ class Plugin3DPrinterOS(octoprint.plugin.StartupPlugin,
                         self.pi.join()
                     except (AttributeError, RuntimeError):
                         pass
-            self.app.detectors['StaticDetector'].add_printer(printer_info, to_config=True)
+            self.app.detectors['StaticDetector'].add_printer(printer_info, to_config=True, save=False)
             pi = None
             time_left = self.PRINTER_TIMEOUT
             self._logger.debug('Waiting for new 3DPrinterOS printer interface')
@@ -274,12 +310,12 @@ class Plugin3DPrinterOS(octoprint.plugin.StartupPlugin,
                 time_left -= 0.01
                 pi = self.app.get_printer_interface()
                 if not time_left:
-                    self.app.detectors['StaticDetector'].remove_printer(printer_info)
+                    self.app.detectors['StaticDetector'].remove_printer(printer_info, allow_remove_from_config=True)
                     return self.error_response('Error. Try again')
             self._logger.debug('Waiting for 3DPrinterOS printer registration code or its acceptance')
             while not pi.printer_token:
                 if not pi.is_alive() or not time_left:
-                    self.app.detectors['StaticDetector'].remove_printer(printer_info)
+                    self.app.detectors['StaticDetector'].remove_printer(printer_info, allow_remove_from_config=True)
                     return self.error_response('Error. Try again')
                 if pi.registration_code:
                     return flask.jsonify({'code': pi.registration_code})
@@ -290,9 +326,3 @@ class Plugin3DPrinterOS(octoprint.plugin.StartupPlugin,
             pi.restart_camera()
             return flask.jsonify({'auth_token': 'ok', 'email': pi.registration_email})
         return self.error_response('Unknown command')
-
-    def get_octo_printer(self):
-        return self._printer
-
-    def get_octo_file_manager(self):
-        return self._file_manager

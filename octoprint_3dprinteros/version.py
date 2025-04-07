@@ -11,12 +11,13 @@
 # (available at https://www.3dprinteros.com/terms-and-conditions/),
 # and privacy policy (available at https://www.3dprinteros.com/privacy-policy/)
 
-version = "7.18.12"
-branch = "master"
+version = "7.41.0"
+branch = "octoprint"
 build = "git"
 
+
 def full_version_string():
-    return version + branch + "_" + build 
+    return version + branch + "_" + build
 
 if __name__ == '__main__':
     print(version)

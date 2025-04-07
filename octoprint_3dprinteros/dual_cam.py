@@ -31,10 +31,79 @@ import log
 import paths
 import platforms
 import user_login
+import threading
 
 
 class EmptyFrame(Exception):
     pass
+
+
+class CameraCaptureThread(threading.Thread):
+    MAX_FAIL_COUNT = 10
+    RETRY_SLEEP = 0.1
+
+    def __init__(self, source, capture, cv2_module, np_module, resized=False, frame_skip=0):
+        super(CameraCaptureThread, self).__init__()
+        self.stopped = False
+        self.resized = resized
+        self.frame_skip = frame_skip
+        self.capture = capture
+        self.source = source
+        self.cv2 = cv2_module
+        self.np = np_module
+        self._failed_count = 0
+        self._frame = self.np.zeros((480, 640, 3), self.np.uint8)
+        self._frame_lock = threading.RLock()
+        self.logger = logging.getLogger(f"Camera {source}")
+
+    def get_frame(self):
+        with self._frame_lock:
+            return self._frame
+
+    def get_failed_count(self):
+        return self._failed_count
+
+    def stop(self):
+        self.stopped = True
+
+    def run(self):
+        while not self.stopped:
+            if self._failed_count > self.MAX_FAIL_COUNT:
+                self.logger.error(f"Reached max failed count for {self.source}. Stopping")
+                break
+            try:
+                if isinstance(self.source, int):
+                    frame_skip = self.frame_skip
+                else:
+                    frame_skip = 0
+                grab_success = False
+                while frame_skip > -1:
+                    grab_success |= self.capture.grab()
+                    frame_skip -= 1
+                if grab_success:
+                    state, frame = self.capture.retrieve()
+                    if state:
+                        with self._frame_lock:
+                            self._frame = frame
+                            self._failed_count = 0
+                        continue
+                with self._frame_lock:
+                    self._frame = None
+                self.logger.error(f"Failed to read frame from {self.source}. Retrying...")
+                self._failed_count += 1
+                time.sleep(self.RETRY_SLEEP)
+            except Exception as e:
+                self.logger.error(f"Exception occurred while capturing frame from {self.source}: {e}")
+                self._failed_count += 1
+                time.sleep(self.RETRY_SLEEP)
+                with self._frame_lock:
+                    self._frame = None
+        if self.capture is not None:
+            try:
+                self.capture.release()
+            except Exception as e:
+                self.logger.error(f"Exception occurred while releasing capture from {self.source}: {e}")
+
 
 class Camera:
 
@@ -55,6 +124,7 @@ class Camera:
     EXPOSURE = config.get_settings()["camera"].get("exposure")
     IMAGE_EXT = ".jpg"
     SAME_IMAGE = 'S'
+    JOIN_TIMEOUT = 10
 
     DEBUG = config.get_settings()["camera"]["logging"]
     SAVE_IMG_PATH = ""
@@ -72,7 +142,6 @@ class Camera:
             self.start()
 
     def pre_init(self, autostart):
-        import threading
         kwargs = {}
         if config.get_settings()['camera']['logging']:
             kwargs["log_file_name"] = log.CAMERA_LOG_FILE
@@ -94,17 +163,22 @@ class Camera:
         self.offline_mode = bool("--offline" in sys.argv) or config.get_settings().get('offline_mode')
         self.hardware_resize = config.get_settings()["camera"]["hardware_resize"]
         self.send_as_imagejpeg = config.get_settings()["camera"]["binary_jpeg"]
+        self.allow_net_input = config.get_settings()["camera"]["network_input"]
+        self.allow_usb_input = config.get_settings()["camera"]["usb_input"]
+        self.reconnect = config.get_settings()["camera"]["reconnect"]
         server_settings = config.get_settings()["camera"]["http_output"]
         if self.offline_mode and server_settings['enabled']:
             self.frame_skip = 0
         else:
             self.frame_skip = config.get_settings()["camera"]["frame_skip"]
+        self.local_http_server = None
         if server_settings['enabled']:
             from camera_server import HTTPMJEPServer
-            self.local_http_server = HTTPMJEPServer()
-            self.local_http_server.start()
-        else:
-            self.local_http_server = None
+            try:
+                self.local_http_server = HTTPMJEPServer()
+                self.local_http_server.start()
+            except Exception as e:
+                self.logger.exception('Exception on start of HTTPMJEPServer:' + str(e))
 
     def init_parameters(self):
         self.cloud_camera_state = {}
@@ -112,6 +186,7 @@ class Camera:
         self.active_camera_number = 0
         self.resized = []
         self.fails = []
+        self.camera_sources = []
 
     def init(self):
         import numpy as np
@@ -120,13 +195,12 @@ class Camera:
         self.cv2 = opencv
         self.cv2_use_int = False
 
-    def init_user_token(self):
-        if self.read_argv and len(sys.argv) > 2:
+    def init_user_token(self, token=None, mac=None):
+        self.token = token
+        self.mac = mac
+        if not self.token and self.read_argv and len(sys.argv) > 2:
             self.token = sys.argv[1]
             mac = sys.argv[2]
-        else:
-            self.token = None
-            mac = None
         if self.offline_mode:
             self.http_client = None
         else:
@@ -151,7 +225,8 @@ class Camera:
             #self.logger.debug("Camera auth_token=" + self.token)
             if not self.token:
                 self.logger.info("Camera: no token to start. Exit...")
-                sys.exit(1)
+                if __name__ == '__main__':
+                    sys.exit(1)
             if mac:
                 self.http_client.host_id = mac #we need to use MAC from client to ensure that it's not changed on camera restart
 
@@ -177,22 +252,25 @@ class Camera:
             self.logger.error(f'Error reading camera urls file: {e}')
         return urls
 
+    def get_cam_backend(self, source):
+        if platforms.PLATFORM in ("rpi", "linux") and isinstance(source, int):
+            return self.cv2.CAP_V4L2
+
     def search_cameras(self):
         self.init_parameters()
         self.captures = []
-        for index in range(0, self.MAX_CAMERA_INDEX):
-            if not self.stop_flag:
-                if platforms.PLATFORM in ("rpi", "linux"):
-                    self.init_capture(index, self.cv2.CAP_V4L2)
-                else:
-                    self.init_capture(index)
-        for url in self.load_camera_urls():
-            if not self.stop_flag:
-                self.init_capture(index)
+        if self.allow_usb_input:
+            for index in range(0, self.MAX_CAMERA_INDEX):
+                if not self.stop_flag:
+                    self.init_capture(index, self.get_cam_backend(index))
+        if self.allow_net_input:
+            for url in self.load_camera_urls():
+                if not self.stop_flag:
+                    self.init_capture(url.strip())
         if self.captures:
             self.logger.info("Got %d operational cameras" % len(self.captures))
 
-    def init_capture(self, capture_name, backend=None):
+    def init_capture(self, capture_name, backend=None, force_capture_number=None):
         self.logger.debug(f"Probing for camera {capture_name}")
         try:
             if backend:
@@ -227,63 +305,86 @@ class Camera:
                     except:
                         self.logger.error(f'Error setting EXPOSURE({self.EXPOSURE}) for {capture_name}')
                     self.logger.info("Camera focus:" + str(capture.get(self.cv2.CAP_PROP_FOCUS)))
-                self.resized.append(self.set_resolution(capture))
-                self.captures.append(capture)
-                self.fails.append(0)
-                self.cloud_camera_state[len(self.fails)-1] = 1
-                self.last_sent_frame_time[len(self.fails)-1] = time.monotonic()
+                if force_capture_number != None: # Can be index 0
+                    try:
+                        self.resized[force_capture_number] = self.set_resolution(capture)
+                        capture_thread = CameraCaptureThread(capture_name, capture, self.cv2, self.np,
+                                                             self.resized[force_capture_number], self.frame_skip)
+                        capture_thread.start()
+                        self.captures[force_capture_number] = capture_thread
+                        self.fails[force_capture_number] = 0
+                        self.cloud_camera_state[force_capture_number] = 1
+                        self.last_sent_frame_time[force_capture_number] = time.monotonic()
+                    except IndexError:
+                        self.logger.error(f'Error re-init camera capture #{force_capture_number} for {capture_name}')
+                else:
+                    resize = self.set_resolution(capture)
+                    self.resized.append(resize)
+                    capture_thread = CameraCaptureThread(capture_name, capture, self.cv2, self.np, resize, self.frame_skip)
+                    capture_thread.start()
+                    self.captures.append(capture_thread)
+                    self.camera_sources.append(capture_name)
+                    self.fails.append(0)
+                    self.cloud_camera_state[len(self.fails)-1] = 1
+                    self.last_sent_frame_time[len(self.fails)-1] = time.monotonic()
+                return True
             else:
                 self.logger.debug(f"Camera at index {capture_name} can't be opened")
         except Exception as e:
-            self.logger.error(f"Error on creation of video capture {capture_name}")
-
-    def set_resolution(self, cap):
-        if self.hardware_resize:
-            try:
-                x = cap.get(self.cv2.CAP_PROP_FRAME_WIDTH)
-                y = cap.get(self.cv2.CAP_PROP_FRAME_HEIGHT)
-            except AttributeError:
-                pass
-            else:
-                if x > 100 or y > 100:
-                    attr_type = type(x)
-                    self.X_RESOLUTION = attr_type(self.X_RESOLUTION)
-                    self.Y_RESOLUTION = attr_type(self.Y_RESOLUTION)
-                    if x == self.X_RESOLUTION and y == self.Y_RESOLUTION:
-                        return True
-                    # protection against setting wrong parameters(some cameras have different params on this indexes)
-                        try:
-                            return cap.set(self.cv2.CAP_PROP_FRAME_WIDTH, self.X_RESOLUTION) and \
-                                   cap.set(self.cv2.CAP_PROP_FRAME_HEIGHT, self.Y_RESOLUTION)
-                        except:
-                            self.logger.error(f"Unable to set resolution {self.X_RESOLUTION}, {self.Y_RESOLUTION} for {cap}")
+            self.logger.error(f"Error on creation of video capture {capture_name}. Desc: {str(e)}")
         return False
 
-    def get_resize_resolution(self, height, width):
+    def set_resolution(self, cap):
+        result = False
+        if not self.hardware_resize:
+            self.logger.info('Setting hardware resolution disabled in the settings. Relying on software resize')
+        else:
+            try:
+                w = cap.get(self.cv2.CAP_PROP_FRAME_WIDTH)
+                h = cap.get(self.cv2.CAP_PROP_FRAME_HEIGHT)
+            except AttributeError:
+                self.logger.warning('Unable to get current resolution. Assuming no access to camera resolution controls')
+            else:
+                if w and h:
+                    if w == self.X_RESOLUTION and h == self.Y_RESOLUTION:
+                        result = True
+                    else:
+                        try:
+                            if cap.set(self.cv2.CAP_PROP_FRAME_WIDTH, type(w)(self.X_RESOLUTION)) and \
+                               cap.set(self.cv2.CAP_PROP_FRAME_HEIGHT, type(h)(self.Y_RESOLUTION)):
+                                self.logger.info(f'Capture {cap} resolution set to {self.X_RESOLUTION}x{self.Y_RESOLUTION}')
+                                result = True
+                            else:
+                                self.logger.warning(f"Capture {cap} rejected resolution {self.X_RESOLUTION}x{self.Y_RESOLUTION}")
+                        except:
+                            self.logger.error(f"Capture {cap} got no attributes to set resolution")
+        return result
+
+    def get_resize_resolution(self, y, x):
         number = self.active_camera_number
         if self.cloud_camera_state.get(number):
             sizes = self.X_RESOLUTION, self.Y_RESOLUTION
         else:
             sizes = self.X_SMALL_RESOLUTION, self.Y_SMALL_RESOLUTION
-        if width > sizes[0] or height > sizes[1]:
-            if self.KOEF_RESOLUTION == width / height:
-                return sizes
-            koef = min(sizes[0] / width, sizes[1] / height)
-            return round(width * koef), round(height * koef)
+        if x > sizes[0] or y > sizes[1]:
+            if x / y != self.KOEF_RESOLUTION:
+                koef = min(sizes[0] / x, sizes[1] / y)
+                sizes = round(x * koef), round(y * koef)
+        return sizes
 
     def resize_cv2_frame(self, frame):
         number = self.active_camera_number
         self.logger.debug("Resizing frame of camera" + str(number))
-        if not self.resized[number] or not self.cloud_camera_state.get(number):  # resize using software
+        if not self.resized[number] and self.cloud_camera_state.get(number):  # resize using software
             try:
-                sizes = self.get_resize_resolution(frame.space[:2])
+                sizes = self.get_resize_resolution(*frame.shape[:2])
                 if not sizes:
                     return frame
                 if self.cv2_use_int:
                     sizes = (int(sizes[0]), int(sizes[1]))
                 frame = self.cv2.resize(frame, sizes, interpolation=self.cv2.INTER_NEAREST)
                 #if not frame and self.empty_frame_error:
-                if not frame:
+                if not frame.any():
                     raise EmptyFrame
             except Exception as e:
                 if isinstance(e, TypeError) and not self.cv2_use_int:
@@ -292,7 +393,6 @@ class Camera:
                     self.fails[number] += 1
                     self.logger.warning("TypeError while software resize of frame: " + str(e))
                     return self.resize_cv2_frame(frame)
-                self.resized[number] = True
                 self.logger.warning("Error while software resize of frame: " + str(e))
         return frame
 
@@ -333,29 +433,17 @@ class Camera:
         number = self.active_camera_number
         return not self.cloud_camera_state.get(number)
 
-    def make_shot(self, number, capture):
-        self.logger.debug("Capturing frame from " + str(capture))
-        try:
-            for _ in range(self.frame_skip+1): # buffer will contain old images if not flushed this way
-                capture.grab()
-            state, frame = capture.retrieve()
-        except Exception as e:
-            error_msg = str(e)
-            if "(-2:Unspecified error)  in function 'grab'" in error_msg:
-                error_msg = "grab error"
-            self.logger.error("Error while capturing frame: " + error_msg)
-            self.fails[number] += 1
-            return []
-        else:
-            if state and frame.any():
-                self.fails[number] = 0
-            else:
-                self.fails[number] += 1
-                return
+    def make_shot(self, number, capture_thread):
+        self.logger.debug("Capturing frame from " + str(capture_thread.source))
+        frame = capture_thread.get_frame()
+        if not frame is None and frame.any():
+            self.fails[number] = capture_thread.get_failed_count()
             if self.is_same_image_frame():
                 return self.SAME_IMAGE
             frame = self.resize_cv2_frame(frame)
             return self.get_image_from_cv2_frame(frame)
+        else:
+            self.fails[number] += 1
 
     def get_camera_number_for_cloud(self):
         return self.active_camera_number + 1
@@ -403,12 +491,21 @@ class Camera:
         while not self.stop_flag:
             frame_start_time = time.monotonic()
             reinit_needed = False
-            for number, capture in enumerate(self.captures):
+            for number, capture_thread in enumerate(self.captures):
                 self.active_camera_number = number
                 if self.fails[number] > self.FAILS_BEFORE_REINIT:
                     self.logger.warning("Reached fail threshold on camera number %d" % number)
-                    reinit_needed = True
-                frame = self.make_shot(number, capture)
+                    if self.reconnect:
+                        self.logger.info("Restarting camera number %d" % number)
+                        try:
+                            capture_thread.stop()
+                        except:
+                            pass
+                        if self.init_capture(self.camera_sources[number], self.get_cam_backend(self.camera_sources[number]), number):
+                            capture_thread = self.captures[number]
+                    else:
+                        self.fails[number] = 0 
+                frame = self.make_shot(number, capture_thread)
                 if not self.offline_mode:
                     if frame:
                         self.logger.debug("Got frame from camera N{number} of size: {len(frame)}")
@@ -449,9 +546,12 @@ class Camera:
         sys.exit(0)
 
     def close_captures(self):
-        for capture in self.captures:
-            capture.release()
-            self.logger.info("Closed camera capture " + str(capture))
+        for capture_thread in self.captures:
+            capture_thread.stop()
+        for capture_thread in self.captures:
+            if capture_thread and capture_thread.is_alive():
+                capture_thread.join(self.JOIN_TIMEOUT)
+            self.logger.info("Closed camera capture " + str(capture_thread.source))
 
     def register_error(self, code, message, is_blocking=False, is_info=False):
         self.logger.warning("Error N%d. %s" % (code, message))

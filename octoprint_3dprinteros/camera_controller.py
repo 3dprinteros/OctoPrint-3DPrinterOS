@@ -24,15 +24,6 @@ import uuid
 import config
 
 
-def remove_non_existed_modules(camera_modules_dict):
-    working_dir = os.path.dirname(os.path.abspath(__file__))
-    verified_camera_modules = {}
-    for camera_name,module in camera_modules_dict.items():
-        if not module or os.path.exists(os.path.join(working_dir, module)):
-            verified_camera_modules[camera_name] = module
-    return verified_camera_modules
-
-
 class CameraController:
 
     DUAL_CAMERA_NAME = "Dual camera"
@@ -42,14 +33,14 @@ class CameraController:
     DISABLE_CAMERA_NAME = "Disable camera"
     MP_CAMERA = "MP camera"
 
-    CAMERA_MODULES = { DUAL_CAMERA_NAME: "dual_cam.py",
-                       MULTI_CAMERA_NAME: "multi_cam.py",
+    DEFAULT_CAMERA_MODULE = "dual_cam.py"
+
+    CAMERA_MODULES = { DUAL_CAMERA_NAME: DEFAULT_CAMERA_MODULE,
+                       MULTI_CAMERA_NAME: DEFAULT_CAMERA_MODULE,
                        PI_CAMERA_NAME: "rpi_cam.py",
                        HTTP_SNAP_CAMERA_NAME: "http_snap_cam.py",
-                       #MP_CAMERA: "ffmpeg",  
+                       #MP_CAMERA: "ffmpeg",
                        DISABLE_CAMERA_NAME: None }
-
-    CAMERA_MODULES = remove_non_existed_modules(CAMERA_MODULES)
 
     CAMERA_FAIL_ERROR_STR = b"select() timeout."
     CAMERA_FAIL_AFTER_RESTART_SLEEP = 60
@@ -69,10 +60,12 @@ class CameraController:
     MP_CAMERA_DEFAULT_WEBAPP = "live"
     MP_CAMERA_URL_MASK = "rtmp://%s/%s?token=%s/%s"
 
-    CAMERA_MODULES = remove_non_existed_modules(CAMERA_MODULES)
+    RUN_FORMAT_NAME = "subprocess"
 
     def __init__(self, app):
         self.app = app
+        self.call_lock = threading.RLock()
+        self.remove_abscent_cameras()
         self.logger = logging.getLogger(__name__)
         self.mac = app.host_id
         self.current_camera_name = self.DISABLE_CAMERA_NAME
@@ -80,7 +73,22 @@ class CameraController:
         self.camera_process = None
         self.enabled = config.get_settings()["camera"]["enabled"]
         self.token = ""
-        self.start_camera_process()
+
+    def remove_abscent_cameras(self,):
+        working_dir = os.path.dirname(os.path.abspath(__file__))
+        to_remove = []
+        for camera_name, module in self.CAMERA_MODULES.items():
+            if module and not os.path.exists(os.path.join(working_dir, module)):
+                to_remove.append(camera_name)
+        for camera_name in to_remove:
+            del self.CAMERA_MODULES[camera_name]
+        # in case of non functional picamera module, replace rpi_cam.py with dual_cam.py
+        # this way it works mostly fine, but image quality is worse
+        try:
+            # pylint: disable=import-error
+            import picamera
+        except:
+            self.CAMERA_MODULES[self.PI_CAMERA_NAME] = self.DEFAULT_CAMERA_MODULE
 
     def check_camera_and_restart_on_error(self):
         while not self.app.stop_flag and self.camera_check_and_restart_thread:
@@ -106,29 +114,28 @@ class CameraController:
             auth_tokens = self.app.user_login.load_printer_auth_tokens()
             if auth_tokens:
                 self.token = auth_tokens[-1][1] #TODO add ability to get proper auth_token for each usb_info
-            else:
+            elif not self.token:
                 self.token = None
 
-    def start_camera_process(self, camera_name=None, token=None):
-        self.logger.info('Launching camera subprocess')
+    def start_camera_process(self, camera_name='', token=''):
+        self.logger.info('Launching camera ' + self.RUN_FORMAT_NAME)
         if not token:
             self.load_token()
             token = self.token
         if not token and not self.app.offline_mode:
-            self.logger.info("No token to start the camera process")
+            self.logger.info("No token to start the camera " + self.RUN_FORMAT_NAME)
             return False
         if not self.mac:
             self.mac = ""
         settings = config.get_settings()
         camera_name_default = settings['camera']['default']
-        for new_camera_name in (camera_name, camera_name_default, self.DUAL_CAMERA_NAME, self.DISABLE_CAMERA_NAME):
-            module_name = self.CAMERA_MODULES.get(new_camera_name)
-            if module_name or (new_camera_name == self.DISABLE_CAMERA_NAME and new_camera_name != camera_name_default):
-                camera_name = new_camera_name
-                break
-        if camera_name_default != camera_name:
-            settings['camera']['default'] = camera_name
-            config.Config.instance().save_settings(settings)
+        with self.call_lock:
+            if camera_name and camera_name_default != camera_name and camera_name in self.CAMERA_MODULES:
+                settings['camera']['default'] = camera_name
+                config.Config.instance().save_settings(settings)
+            else:
+                camera_name = camera_name_default
+            module_name = self.CAMERA_MODULES.get(camera_name)
         if not self.enabled:
             self.logger.info("Can't launch camera - disabled in config")
         elif module_name:
@@ -141,9 +148,13 @@ class CameraController:
         return False
 
     def run_camera(self, module_name, camera_name, token):
+        if not token:
+            token = '' # todo fix call with token=None
+        self.logger.info(f'Starting {camera_name} with {module_name}')
         cam_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), module_name)
         if module_name == "ffmpeg":
             start_command = self.form_mp_camera_command(token)
+            camera_popen_kwargs = {}
         else:
             start_command = [sys.executable, cam_path, token, self.mac]
             if self.app.offline_mode:
@@ -157,20 +168,36 @@ class CameraController:
         try:
             self.camera_process = subprocess.Popen(start_command, **camera_popen_kwargs)
         except Exception as e:
-            self.logger.warning('Could not launch camera due to error: ' + str(e))
+            self.logger.error(f'Could not launch camera due to error: {e}\tArgs: {start_command}\tKeyword args: {camera_popen_kwargs}')
         else:
+            self.logger.info('Started subprocess for ' + camera_name)
             return True
         return False
 
     def restart_camera(self, token=None):
-        if self.current_camera_name != self.DISABLE_CAMERA_NAME:
-            new_camera_name = self.current_camera_name
-        else:
-            new_camera_name = config.get_settings()['camera']['default']
-        self.load_token()
-        self.logger.info('Restarting camera module: ' + new_camera_name)
-        self.stop_camera_process()
-        return self.start_camera_process(new_camera_name)
+        if token:
+            self.token = token
+        with self.call_lock:
+            if self.current_camera_name != self.DISABLE_CAMERA_NAME:
+                new_camera_name = self.current_camera_name
+            else:
+                new_camera_name = config.get_settings()['camera']['default']
+            self.logger.info('Restarting camera module: ' + new_camera_name)
+            self.load_token()
+            self.stop_camera_process()
+            for pi in self.app.printer_interfaces:
+                try:
+                    if pi.is_alive() and pi.sender:
+                        pi.sender.camera_disable_hook()
+                except:
+                    self.logger.exception(f'Exception while calling camera disable hook for {pi}:')
+            for pi in self.app.printer_interfaces:
+                try:
+                    if pi.is_alive() and pi.sender:
+                        pi.sender.camera_enable_hook()
+                except:
+                    self.logger.exception(f'Exception while calling camera enable hook for {pi}:')
+            return self.start_camera_process(new_camera_name)
 
     def form_mp_camera_command(self, token):
         cam_path = self.CAMERA_MODULES['MP camera']
@@ -184,13 +211,13 @@ class CameraController:
         new_token = token_hash.hexdigest()
         args = []
         for key, value in self.MP_CAMERA_DEFAULT_PARAMS.items():
-            args.append(key) 
+            args.append(key)
             if key == '-i':
                 # using first camera until multiple camera processes support will be implemented
                 cameras = self.get_cameras_list()
                 if cameras:
                     value = cameras[0]
-            args.append(value) 
+            args.append(value)
         url = self.MP_CAMERA_URL_MASK % (self.MP_CAMERA_DEFAULT_URL, self.MP_CAMERA_DEFAULT_WEBAPP, new_token, uuid)
         args.append(url)
         start_command = [cam_path] + args
@@ -200,16 +227,40 @@ class CameraController:
         return self.current_camera_name
 
     def switch_camera(self, new_camera_name, token=None):
-        if not token:
-            token=self.token
-        if not config.get_settings()['camera']['switch_type'] or not new_camera_name:
-            new_camera_name = config.get_settings()['camera']['default']
-        self.logger.info('Switching camera module from %s to %s' % (self.current_camera_name, new_camera_name))
-        self.stop_camera_process()
-        return self.start_camera_process(camera_name=new_camera_name, token=token)
+        with self.call_lock:
+            if not token:
+                token=self.token
+            if not config.get_settings()['camera']['switch_type'] or not new_camera_name:
+                new_camera_name = config.get_settings()['camera']['default']
+            self.logger.info('Switching camera module from %s to %s' % (self.current_camera_name, new_camera_name))
+            success = True
+            if self.current_camera_name != new_camera_name:
+                self.stop_camera_process(update_settings=True)
+                if new_camera_name == self.DISABLE_CAMERA_NAME:
+                    success = True
+                else:
+                    success = self.start_camera_process(camera_name=new_camera_name, token=token)
+                for pi in self.app.printer_interfaces:
+                    if success:
+                        pi.report_camera_change(new_camera_name)
+                    else:
+                        self.logger.warning('Camera module start failed: ' + str(new_camera_name))
+                    if new_camera_name == self.DISABLE_CAMERA_NAME:
+                        try:
+                            if pi.is_alive() and pi.sender:
+                                pi.sender.camera_disable_hook()
+                        except:
+                            self.logger.exception(f'Exception while calling camera disable hook for {pi}:')
+                    else:
+                        try:
+                            if pi.is_alive() and pi.sender:
+                                pi.sender.camera_enable_hook()
+                        except:
+                            self.logger.exception(f'Exception while calling camera enable hook for {pi}:')
+            return success
 
-    def stop_camera_process(self):
-        self.logger.info('Terminating camera process...')
+    def stop_camera_process(self, update_settings=False):
+        self.logger.info('Terminating camera subprocess...')
         counter = self.SUBPROC_STOP_TIMEOUT
         while counter and self.camera_process:
             self.camera_check_and_restart_thread = None
@@ -231,9 +282,13 @@ class CameraController:
             except:
                 pass
             time.sleep(1) # give subprocess a time to go down
-        self.logger.info('...camera process terminated.')
+        self.logger.info('...camera subprocess terminated.')
         self.current_camera_name = "Disable camera"
         self.camera_process = None
+        if update_settings:
+            settings = config.get_settings()
+            settings['camera']['default'] = self.DISABLE_CAMERA_NAME
+            config.Config.instance().save_settings(settings)
 
     def get_cameras_list(self):
         cameras = []
